@@ -12,17 +12,18 @@ export interface BankInfo {
 export interface Contact {
   id: number;
   companyName: string;
-  ceoName?: string;
-  fieldOfActivity?: string;
-  accountantName?: string;
-  accountantPhone?: string;
+  contactPerson?: string;
+  phone?: string;
   email?: string;
   address?: string;
+  nationalId?: string;
+  economicCode?: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
   bankInfo?: BankInfo;
   notes?: string;
   accessToken?: string;
-  createdAt: string;
-  updatedAt: string;
   creatorId: number;
   // روابط
   createdBy?: {

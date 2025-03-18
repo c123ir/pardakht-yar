@@ -1,7 +1,37 @@
 // client/src/types/payment.types.ts
 // تایپ‌های مربوط به پرداخت‌ها
 
+import { Group } from './group.types';
+import { Contact } from './contact.types';
+
 export type PaymentStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED';
+
+export interface Payment {
+  id: number;
+  title: string;
+  amount: number;
+  effectiveDate: string;
+  description?: string;
+  status: PaymentStatus;
+  groupId?: number;
+  group?: Group;
+  contactId?: number;
+  contact?: Contact;
+  beneficiaryName?: string;
+  beneficiaryPhone?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentImage {
+  id: number;
+  paymentId: number;
+  originalName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+}
 
 export interface PaymentRequest {
   id: number;
@@ -41,20 +71,6 @@ export interface PaymentRequest {
     fullName: string;
   };
   images?: PaymentImage[];
-}
-
-export interface PaymentImage {
-  id: number;
-  paymentId: number;
-  fileName: string;
-  filePath: string;
-  thumbnailPath?: string;
-  originalName?: string;
-  mimeType?: string;
-  size?: number;
-  hasWatermark: boolean;
-  uploaderId: number;
-  uploadedAt: string;
 }
 
 export interface CreatePaymentDto {

@@ -112,5 +112,47 @@ export const formatDateTime = (date: Date | string | number): string => {
     ? new Date(date)
     : date;
   
-  return toJalali(dateObj, 'yyyy/MM/dd HH:mm');
+  return dateObj.toLocaleDateString('fa-IR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+// تبدیل تاریخ به فرمت نسبی (مثلاً "۲ روز پیش")
+export const getRelativeTime = (date: Date | string): string => {
+  const rtf = new Intl.RelativeTimeFormat('fa', { numeric: 'auto' });
+  const now = new Date();
+  const targetDate = new Date(date);
+  const diffInSeconds = Math.floor((targetDate.getTime() - now.getTime()) / 1000);
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+  const diffInMonths = Math.floor(diffInDays / 30);
+  const diffInYears = Math.floor(diffInDays / 365);
+
+  if (Math.abs(diffInSeconds) < 60) {
+    return rtf.format(diffInSeconds, 'second');
+  } else if (Math.abs(diffInMinutes) < 60) {
+    return rtf.format(diffInMinutes, 'minute');
+  } else if (Math.abs(diffInHours) < 24) {
+    return rtf.format(diffInHours, 'hour');
+  } else if (Math.abs(diffInDays) < 30) {
+    return rtf.format(diffInDays, 'day');
+  } else if (Math.abs(diffInMonths) < 12) {
+    return rtf.format(diffInMonths, 'month');
+  } else {
+    return rtf.format(diffInYears, 'year');
+  }
+};
+
+// تبدیل تاریخ به فرمت فارسی
+export const formatDate = (date: Date | string): string => {
+  return new Date(date).toLocaleDateString('fa-IR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 };

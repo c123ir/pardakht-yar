@@ -56,18 +56,16 @@ export const getPayments = async (req: Request, res: Response) => {
     }
     
     // فیلتر بر اساس تاریخ
-    if (startDate) {
-      whereConditions.effectiveDate = {
-        ...whereConditions.effectiveDate,
-        gte: new Date(String(startDate)),
-      };
-    }
-    
-    if (endDate) {
-      whereConditions.effectiveDate = {
-        ...whereConditions.effectiveDate,
-        lte: new Date(String(endDate)),
-      };
+    if (startDate || endDate) {
+      whereConditions.effectiveDate = {};
+      
+      if (startDate) {
+        whereConditions.effectiveDate.gte = new Date(String(startDate));
+      }
+      
+      if (endDate) {
+        whereConditions.effectiveDate.lte = new Date(String(endDate));
+      }
     }
     
     // جستجوی متنی
@@ -179,25 +177,94 @@ export const getPaymentById = async (req: Request, res: Response) => {
       });
     }
 
-    // // گرفتن پرداخت از پایگاه داده
-    // const payment = await prisma.paymentRequest.findUnique({
-    //   where: { id: paymentId },
-    //   include: {
-    //     contact
+    // گرفتن پرداخت از پایگاه داده
+    const payment = await prisma.paymentRequest.findUnique({
+      where: { id: paymentId },
+      include: {
+        contact: {
+          select: {
+            id: true,
+            companyName: true,
+            accountantName: true,
+            accountantPhone: true,
+          },
+        },
+        group: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        paidBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        images: {
+          select: {
+            id: true,
+            fileName: true,
+            filePath: true,
+            thumbnailPath: true,
+            originalName: true,
+            size: true,
+            mimeType: true,
+            hasWatermark: true,
+            uploadedAt: true,
+            uploadedBy: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+          },
+          orderBy: {
+            uploadedAt: 'desc',
+          },
+        },
+        notifications: {
+          select: {
+            id: true,
+            message: true,
+            method: true,
+            status: true,
+            sentAt: true,
+          },
+          orderBy: {
+            sentAt: 'desc',
+          },
+        },
+      },
+    });
 
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'درخواست پرداخت مورد نظر یافت نشد',
+      });
+    }
 
+    return res.status(200).json({
+      success: true,
+      data: payment,
+    });
+  } catch (error) {
+    logger.error('خطا در دریافت اطلاعات درخواست پرداخت', error as Error);
+    return res.status(500).json({
+      success: false,
+      message: 'خطای سرور در دریافت اطلاعات درخواست پرداخت',
+    });
+  }
+};
 
-
-
-
-
-
-
-
-
-
-
-        /**
+/**
  * به‌روزرسانی درخواست پرداخت
  */
 export const updatePayment = async (req: Request, res: Response) => {
@@ -754,3 +821,168 @@ export const sendPaymentNotification = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * ایجاد درخواست پرداخت جدید
+ */
+export const createPayment = async (req: Request, res: Response) => {
+  try {
+    const {
+      title,
+      amount,
+      effectiveDate,
+      description,
+      groupId,
+      contactId,
+      beneficiaryName,
+      beneficiaryPhone,
+    } = req.body;
+
+    // تبدیل شماره موبایل فارسی به انگلیسی
+    const phoneNormalized = beneficiaryPhone ? convertPersianToEnglishNumbers(beneficiaryPhone) : undefined;
+
+    // ایجاد درخواست پرداخت جدید
+    const newPayment = await prisma.paymentRequest.create({
+      data: {
+        title,
+        amount: Number(amount),
+        effectiveDate: new Date(effectiveDate),
+        description,
+        status: 'PENDING',
+        groupId: groupId ? Number(groupId) : null,
+        contactId: contactId ? Number(contactId) : null,
+        beneficiaryName,
+        beneficiaryPhone: phoneNormalized,
+        creatorId: req.user!.id,
+        updaterId: req.user!.id,
+      },
+      include: {
+        contact: {
+          select: {
+            companyName: true,
+          },
+        },
+        group: {
+          select: {
+            title: true,
+          },
+        },
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: newPayment,
+    });
+  } catch (error) {
+    logger.error('خطا در ایجاد درخواست پرداخت', error as Error);
+    return res.status(500).json({
+      success: false,
+      message: 'خطای سرور در ایجاد درخواست پرداخت',
+    });
+  }
+};
+
+/**
+ * حذف تصویر فیش پرداخت
+ */
+export const deletePaymentImage = async (req: Request, res: Response) => {
+  try {
+    const { id, imageId } = req.params;
+    const paymentId = parseInt(id);
+    const paymentImageId = parseInt(imageId);
+    
+    if (isNaN(paymentId) || isNaN(paymentImageId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه درخواست پرداخت یا تصویر نامعتبر است',
+      });
+    }
+
+    // بررسی وجود تصویر
+    const image = await prisma.paymentImage.findFirst({
+      where: {
+        id: paymentImageId,
+        paymentId: paymentId,
+      },
+    });
+
+    if (!image) {
+      return res.status(404).json({
+        success: false,
+        message: 'تصویر مورد نظر یافت نشد',
+      });
+    }
+
+    // حذف فایل‌های فیزیکی
+    try {
+      if (image.filePath) {
+        const filePath = path.join(config.upload.path, image.filePath);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      
+      if (image.thumbnailPath) {
+        const thumbnailPath = path.join(config.upload.path, image.thumbnailPath);
+        if (fs.existsSync(thumbnailPath)) {
+          fs.unlinkSync(thumbnailPath);
+        }
+      }
+    } catch (err) {
+      logger.error(`خطا در حذف فایل تصویر ${image.fileName}`, err as Error);
+    }
+
+    // حذف رکورد تصویر از پایگاه داده
+    await prisma.paymentImage.delete({
+      where: { id: paymentImageId },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'تصویر با موفقیت حذف شد',
+    });
+  } catch (error) {
+    logger.error('خطا در حذف تصویر فیش پرداخت', error as Error);
+    return res.status(500).json({
+      success: false,
+      message: 'خطای سرور در حذف تصویر فیش پرداخت',
+    });
+  }
+};
+
+/**
+ * دریافت تاریخچه اطلاع‌رسانی‌های پرداخت
+ */
+export const getPaymentNotifications = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const paymentId = parseInt(id);
+    
+    if (isNaN(paymentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه درخواست پرداخت نامعتبر است',
+      });
+    }
+
+    // دریافت اطلاع‌رسانی‌های پرداخت
+    const notifications = await prisma.notification.findMany({
+      where: { paymentId },
+      orderBy: {
+        sentAt: 'desc',
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: notifications,
+    });
+  } catch (error) {
+    logger.error('خطا در دریافت تاریخچه اطلاع‌رسانی‌ها', error as Error);
+    return res.status(500).json({
+      success: false,
+      message: 'خطای سرور در دریافت تاریخچه اطلاع‌رسانی‌ها',
+    });
+  }
+};  

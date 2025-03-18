@@ -6,6 +6,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import PaymentsPage from './pages/PaymentsPage';
+import PaymentFormPage from './pages/PaymentFormPage';
+import PaymentImagesPage from './pages/PaymentImagesPage';
 import GroupsPage from './pages/GroupsPage';
 import ContactsPage from './pages/ContactsPage';
 import UsersPage from './pages/UsersPage';
@@ -29,7 +31,15 @@ const AppRoutes: React.FC = () => {
       >
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="payments" element={<PaymentsPage />} />
+        
+        {/* مسیرهای پرداخت */}
+        <Route path="payments">
+          <Route index element={<PaymentsPage />} />
+          <Route path="new" element={<PaymentFormPage />} />
+          <Route path=":id/edit" element={<PaymentFormPage />} />
+          <Route path=":id/images" element={<PaymentImagesPage />} />
+        </Route>
+        
         <Route path="groups" element={<GroupsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         
