@@ -7,31 +7,153 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// مدل کاربران سیستم
 model User {
+  id               Int              @id @default(autoincrement())
+  username         String           @unique
+  password         String
+  fullName         String
+  email            String?          @unique
+  phone            String?          @unique
+  role             Role             @default(ADMIN)
+  isActive         Boolean          @default(true)
+  lastLogin        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  createdContacts  Contact[]        @relation("ContactCreatedBy")
+  groupMemberships GroupMember[]
+  createdGroups    PaymentGroup[]   @relation("GroupCreatedBy")
+  uploadedImages   PaymentImage[]   @relation("UploadedBy")
+  createdPayments  PaymentRequest[] @relation("CreatedBy")
+  paidPayments     PaymentRequest[] @relation("PaidBy")
+  updatedPayments  PaymentRequest[] @relation("UpdatedBy")
+}
+
+model PaymentGroup {
+  id              Int              @id @default(autoincrement())
+  title           String
+  description     String?
+  creatorId       Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  members         GroupMember[]
+  createdBy       User             @relation("GroupCreatedBy", fields: [creatorId], references: [id])
+  paymentRequests PaymentRequest[]
+}
+
+model GroupMember {
+  id        Int          @id @default(autoincrement())
+  groupId   Int
+  userId    Int
+  createdAt DateTime     @default(now())
+  group     PaymentGroup @relation(fields: [groupId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model Contact {
+  id               Int                     @id @default(autoincrement())
+  companyName      String
+  ceoName          String?
+  fieldOfActivity  String?
+  accountantName   String?
+  accountantPhone  String?
+  email            String?
+  address          String?
+  bankInfo         Json?
+  notes            String?
+  accessToken      String?                 @unique
+  creatorId        Int
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  createdBy        User                    @relation("ContactCreatedBy", fields: [creatorId], references: [id])
+  portalActivities ContactPortalActivity[]
+  paymentRequests  PaymentRequest[]
+}
+
+model PaymentRequest {
+  id               Int                     @id @default(autoincrement())
+  title            String
+  amount           BigInt
+  effectiveDate    DateTime
+  description      String?
+  status           PaymentStatus           @default(PENDING)
+  paymentType      String?
+  groupId          Int?
+  contactId        Int?
+  beneficiaryName  String?
+  beneficiaryPhone String?
+  isSMSSent        Boolean                 @default(false)
+  smsSentAt        DateTime?
+  paymentDate      DateTime?
+  paidById         Int?
+  creatorId        Int
+  updaterId        Int?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  portalActivities ContactPortalActivity[]
+  notifications    Notification[]
+  images           PaymentImage[]
+  contact          Contact?                @relation(fields: [contactId], references: [id])
+  createdBy        User                    @relation("CreatedBy", fields: [creatorId], references: [id])
+  group            PaymentGroup?           @relation(fields: [groupId], references: [id])
+  paidBy           User?                   @relation("PaidBy", fields: [paidById], references: [id])
+  updatedBy        User?                   @relation("UpdatedBy", fields: [updaterId], references: [id])
+}
+
+model PaymentImage {
+  id            Int            @id @default(autoincrement())
+  paymentId     Int
+  fileName      String
+  filePath      String
+  thumbnailPath String?
+  originalName  String?
+  mimeType      String?
+  size          Int?
+  hasWatermark  Boolean        @default(true)
+  uploaderId    Int
+  uploadedAt    DateTime       @default(now())
+  payment       PaymentRequest @relation(fields: [paymentId], references: [id])
+  uploadedBy    User           @relation("UploadedBy", fields: [uploaderId], references: [id])
+}
+
+model Notification {
+  id            Int            @id @default(autoincrement())
+  paymentId     Int
+  recipientType String
+  recipientId   Int
+  message       String
+  method        String
+  status        String         @default("pending")
+  sentAt        DateTime?
+  createdAt     DateTime       @default(now())
+  payment       PaymentRequest @relation(fields: [paymentId], references: [id])
+}
+
+model ContactPortalActivity {
+  id        Int             @id @default(autoincrement())
+  contactId Int
+  paymentId Int?
+  action    String
+  ipAddress String?
+  userAgent String?
+  feedback  String?
+  createdAt DateTime        @default(now())
+  contact   Contact         @relation(fields: [contactId], references: [id])
+  payment   PaymentRequest? @relation(fields: [paymentId], references: [id])
+}
+
+model Setting {
   id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  fullName  String
-  email     String?  @unique
-  phone     String?  @unique
-  role      Role     @default(USER)
-  isActive  Boolean  @default(true)
-  lastLogin DateTime?
+  category  String
+  key       String
+  value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // روابط
-  createdPayments    PaymentRequest[] @relation("CreatedBy")
-  updatedPayments    PaymentRequest[] @relation("UpdatedBy")
-  paidPayments       PaymentRequest[] @relation("PaidBy")
-  uploadedImages     PaymentImage[]   @relation("UploadedBy")
-  createdGroups      PaymentGroup[]   @relation("GroupCreatedBy")
-  createdContacts    Contact[]        @relation("ContactCreatedBy")
-  groupMemberships   GroupMember[]
+  @@unique([category, key])
 }
 
-// نقش‌های کاربران
 enum Role {
   ADMIN
   FINANCIAL_MANAGER
@@ -41,138 +163,9 @@ enum Role {
   PROCUREMENT
 }
 
-// گروه‌های پرداخت
-model PaymentGroup {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  createdBy   User     @relation("GroupCreatedBy", fields: [creatorId], references: [id])
-  creatorId   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // روابط
-  members         GroupMember[]
-  paymentRequests PaymentRequest[]
-}
-
-// اعضای گروه
-model GroupMember {
-  id        Int          @id @default(autoincrement())
-  group     PaymentGroup @relation(fields: [groupId], references: [id])
-  groupId   Int
-  user      User         @relation(fields: [userId], references: [id])
-  userId    Int
-  createdAt DateTime     @default(now())
-
-  @@unique([groupId, userId])
-}
-
-// طرف‌حساب‌ها
-model Contact {
-  id              Int      @id @default(autoincrement())
-  companyName     String
-  ceoName         String?
-  fieldOfActivity String?
-  accountantName  String?
-  accountantPhone String?
-  email           String?
-  address         String?
-  bankInfo        Json?
-  notes           String?
-  accessToken     String?  @unique // توکن دسترسی به پورتال
-  createdBy       User     @relation("ContactCreatedBy", fields: [creatorId], references: [id])
-  creatorId       Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // روابط
-  paymentRequests   PaymentRequest[]
-  portalActivities  ContactPortalActivity[]
-}
-
-// درخواست‌های پرداخت
-model PaymentRequest {
-  id               Int           @id @default(autoincrement())
-  title            String
-  amount           BigInt
-  effectiveDate    DateTime
-  description      String?
-  status           PaymentStatus @default(PENDING)
-  paymentType      String?       // حقوق، طرف‌حساب، سود و...
-  group            PaymentGroup? @relation(fields: [groupId], references: [id])
-  groupId          Int?
-  contact          Contact?      @relation(fields: [contactId], references: [id])
-  contactId        Int?
-  beneficiaryName  String?       // نام ذینفع
-  beneficiaryPhone String?       // موبایل ذینفع
-  isSMSSent        Boolean       @default(false)
-  smsSentAt        DateTime?
-  paymentDate      DateTime?     // تاریخ واقعی پرداخت
-  paidBy           User?         @relation("PaidBy", fields: [paidById], references: [id])
-  paidById         Int?
-  createdBy        User          @relation("CreatedBy", fields: [creatorId], references: [id])
-  creatorId        Int
-  updatedBy        User?         @relation("UpdatedBy", fields: [updaterId], references: [id])
-  updaterId        Int?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-
-  // روابط
-  images           PaymentImage[]
-  notifications    Notification[]
-  portalActivities ContactPortalActivity[]
-}
-
-// وضعیت‌های پرداخت
 enum PaymentStatus {
-  PENDING   // در انتظار
-  APPROVED  // تایید شده
-  PAID      // پرداخت شده
-  REJECTED  // رد شده
-}
-
-// تصاویر پرداخت
-model PaymentImage {
-  id            Int            @id @default(autoincrement())
-  payment       PaymentRequest @relation(fields: [paymentId], references: [id])
-  paymentId     Int
-  fileName      String
-  filePath      String
-  thumbnailPath String?
-  originalName  String?
-  mimeType      String?
-  size          Int?
-  hasWatermark  Boolean        @default(true)
-  uploadedBy    User           @relation("UploadedBy", fields: [uploaderId], references: [id])
-  uploaderId    Int
-  uploadedAt    DateTime       @default(now())
-}
-
-// اطلاع‌رسانی‌ها
-model Notification {
-  id           Int            @id @default(autoincrement())
-  payment      PaymentRequest @relation(fields: [paymentId], references: [id])
-  paymentId    Int
-  recipientType String        // 'contact' یا 'user'
-  recipientId  Int
-  message      String
-  method       String         // 'sms', 'email', 'system'
-  status       String         @default("pending") // 'pending', 'sent', 'failed'
-  sentAt       DateTime?
-  createdAt    DateTime       @default(now())
-}
-
-// فعالیت پورتال طرف‌حساب‌ها
-model ContactPortalActivity {
-  id          Int             @id @default(autoincrement())
-  contact     Contact         @relation(fields: [contactId], references: [id])
-  contactId   Int
-  payment     PaymentRequest? @relation(fields: [paymentId], references: [id])
-  paymentId   Int?
-  action      String          // 'view', 'download', 'feedback'
-  ipAddress   String?
-  userAgent   String?
-  feedback    String?
-  createdAt   DateTime        @default(now())
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
 }

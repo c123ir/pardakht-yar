@@ -1,4 +1,4 @@
-* client/src/styles/global.css */
+/* client/src/styles/global.css */
 /* استایل‌های سراسری */
 
 @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
@@ -45,4 +45,3 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
-

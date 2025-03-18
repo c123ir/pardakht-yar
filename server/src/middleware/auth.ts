@@ -3,11 +3,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import logger from '../config/logger';
 import config from '../config/app';
-
-const prisma = new PrismaClient();
+import logger from '../config/logger';
 
 // گسترش تایپ Express Request برای اضافه کردن اطلاعات کاربر
 declare global {
@@ -37,31 +34,18 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     // استخراج توکن
     const token = authHeader.split(' ')[1];
     
-    // تایید توکن
+    // تایید توکن - اصلاح شده
     const decoded = jwt.verify(token, config.jwt.secret) as jwt.JwtPayload & {
       id: number;
       username: string;
       role: string;
     };
 
-    // بررسی وجود کاربر در دیتابیس
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, username: true, role: true, isActive: true },
-    });
-
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'کاربر معتبر نیست',
-      });
-    }
-
     // افزودن اطلاعات کاربر به درخواست
     req.user = {
-      id: user.id,
-      username: user.username,
-      role: user.role,
+      id: decoded.id,
+      username: decoded.username,
+      role: decoded.role,
     };
 
     next();
@@ -80,25 +64,4 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       message: 'توکن نامعتبر است',
     });
   }
-};
-
-// میدل‌ور بررسی دسترسی بر اساس نقش
-export const authorize = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'دسترسی غیرمجاز',
-      });
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'شما مجوز دسترسی به این منبع را ندارید',
-      });
-    }
-
-    next();
-  };
 };

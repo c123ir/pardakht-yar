@@ -9,7 +9,9 @@ import compression from 'compression';
 import path from 'path';
 import config from './config/app';
 import logger from './config/logger';
-
+import authRoutes from './routes/authRoutes';
+import userRoutes from './routes/userRoutes';
+import settingRoutes from './routes/settingRoutes';
 // ایجاد اپلیکیشن Express
 const app: Express = express();
 
@@ -36,7 +38,9 @@ app.use(
 
 // مسیرهای API (در فازهای بعدی تکمیل خواهد شد)
 // app.use('/api/auth', authRoutes);
-
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/settings', settingRoutes);
 // صفحه اصلی API
 app.get('/api', (req: Request, res: Response) => {
   res.json({

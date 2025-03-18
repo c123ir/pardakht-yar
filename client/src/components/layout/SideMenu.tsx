@@ -22,6 +22,9 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import GroupsIcon from '@mui/icons-material/Groups';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import SettingsIcon from '@mui/icons-material/Settings';
+import PeopleIcon from '@mui/icons-material/People';
+import SmsIcon from '@mui/icons-material/Sms';
+import { useAuth } from '../../hooks/useAuth';
 
 const drawerWidth = 240;
 
@@ -57,17 +60,25 @@ const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'ope
   }),
 );
 
-// آیتم‌های منو
-const menuItems = [
-  { text: 'داشبورد', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'پرداخت‌ها', icon: <PaymentsIcon />, path: '/payments' },
-  { text: 'گروه‌ها', icon: <GroupsIcon />, path: '/groups' },
-  { text: 'طرف‌حساب‌ها', icon: <ContactsIcon />, path: '/contacts' },
-];
-
 const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
   const location = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   
+  // آیتم‌های منوی اصلی
+  const mainMenuItems = [
+    { text: 'داشبورد', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'پرداخت‌ها', icon: <PaymentsIcon />, path: '/payments' },
+    { text: 'گروه‌ها', icon: <GroupsIcon />, path: '/groups' },
+    { text: 'طرف‌حساب‌ها', icon: <ContactsIcon />, path: '/contacts' },
+  ];
+
+  // آیتم‌های منوی مدیریت - فقط برای ادمین
+  const adminMenuItems = [
+    { text: 'مدیریت کاربران', icon: <PeopleIcon />, path: '/users' },
+    { text: 'تنظیمات پیامک', icon: <SmsIcon />, path: '/settings/sms' },
+  ];
+
   return (
     <StyledDrawer variant="permanent" open={open}>
       <Toolbar
@@ -84,7 +95,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
       </Toolbar>
       <Divider />
       <List component="nav">
-        {menuItems.map((item) => (
+        {/* منوی اصلی */}
+        {mainMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               component={Link}
@@ -96,15 +108,35 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
             </ListItemButton>
           </ListItem>
         ))}
-        <Divider sx={{ my: 1 }} />
-        <ListItem disablePadding>
-          <ListItemButton component={Link} to="/settings">
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="تنظیمات" />
-          </ListItemButton>
-        </ListItem>
+        
+        {/* منوی مدیریت - فقط برای ادمین */}
+        {isAdmin && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <ListItem>
+              <ListItemText 
+                primary="مدیریت سیستم" 
+                primaryTypographyProps={{ 
+                  variant: 'caption', 
+                  color: 'text.secondary' 
+                }} 
+              />
+            </ListItem>
+            
+            {adminMenuItems.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={location.pathname === item.path}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </>
+        )}
       </List>
     </StyledDrawer>
   );
