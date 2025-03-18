@@ -1,0 +1,17 @@
+{
+  "name": "pardakht-yar",
+  "version": "0.1.0",
+  "description": "سیستم مدیریت واریزی‌ها و طرف‌حساب‌های مالی",
+  "scripts": {
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "setup": "npm i && cd client && npm i && cd ../server && npm i",
+    "build": "cd client && npm run build && cd ../server && npm run build"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
