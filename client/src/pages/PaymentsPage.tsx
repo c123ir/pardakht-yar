@@ -1,5 +1,5 @@
 // client/src/pages/PaymentsPage.tsx
-// صفحه مدیریت پرداخت‌ها
+// صفحه اصلی مدیریت پرداخت‌ها
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,8 +9,11 @@ import {
   Card,
   CardContent,
   Grid,
-  IconButton,
   Paper,
+  Typography,
+  TextField,
+  InputAdornment,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -18,14 +21,13 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  TextField,
-  Typography,
   Chip,
   Tooltip,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
+  CircularProgress,
+  Divider,
+  Alert,
+  Stack,
+  Badge,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,233 +37,452 @@ import {
   Send as SendIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
+  Refresh as RefreshIcon,
+  AttachMoney as MoneyIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
-import { useSnackbar } from 'notistack';
-import { formatDateTime, formatNumber } from '../utils/numberUtils';
-import { PaymentStatus } from '../types/payment';
 import { usePayments } from '../hooks/usePayments';
+import { useToast } from '../contexts/ToastContext';
 import PaymentStatusChip from '../components/payments/PaymentStatusChip';
 import PaymentFilterDialog from '../components/payments/PaymentFilterDialog';
 import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
-
+import { formatDate, formatDateTime } from '../utils/dateUtils';
+import { PaymentRequest, PaymentStatus, PaymentFilter } from '../types/payment.types';
+/**
+ * صفحه نمایش و مدیریت پرداخت‌ها با قابلیت فیلتر، جستجو و عملیات مدیریتی
+ */
 const PaymentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
-  const [filters, setFilters] = useState({
+  const { showToast } = useToast();
+  
+  // هوک مدیریت پرداخت‌ها
+  const {
+    payments,
+    loading,
+    error,
+    totalItems,
+    fetchPayments,
+    deletePayment,
+    sendPaymentNotification,
+    changePaymentStatus,
+  } = usePayments();
+
+  // استیت‌های مدیریت نمایش
+  const [page, setPage] = useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  
+  // استیت‌های مدیریت فیلتر
+  const [filterDialogOpen, setFilterDialogOpen] = useState<boolean>(false);
+  const [filters, setFilters] = useState<{
+    status: string;
+    startDate: string;
+    endDate: string;
+    groupId: string;
+    contactId: string;
+  }>({
     status: '',
     startDate: '',
     endDate: '',
     groupId: '',
     contactId: '',
   });
-
-  const {
-    payments,
-    totalItems,
-    loading,
-    error,
-    fetchPayments,
-    deletePayment,
-    sendNotification,
-  } = usePayments();
-
+  
+  // استیت‌های مدیریت دیالوگ‌ها
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  
+  // استیت‌های مدیریت ارسال پیامک
+  const [sendingSms, setSendingSms] = useState<boolean>(false);
+  const [sendingSmsId, setSendingSmsId] = useState<number | null>(null);
+  // بارگذاری اولیه داده‌ها
   useEffect(() => {
-    fetchPayments({
-      page: page + 1,
-      limit: rowsPerPage,
-      search: searchTerm,
-      ...filters,
-    });
-  }, [page, rowsPerPage, searchTerm, filters]);
+    loadPayments();
+  }, [page, rowsPerPage, filters]);
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  // بارگذاری مجدد با تأخیر برای جستجو
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    const timeoutId = setTimeout(() => {
+      setPage(0); // بازگشت به صفحه اول هنگام جستجو
+      loadPayments();
+    }, 500);
+    
+    setSearchTimeout(timeoutId);
+    
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTerm]);
+
+  // تابع بارگذاری پرداخت‌ها
+  const loadPayments = async () => {
+    try {
+      // ساخت پارامترهای فیلتر برای API
+      const apiFilter: PaymentFilter = {
+        page: page + 1, // API از شماره 1 شروع می‌کند
+        limit: rowsPerPage,
+        search: searchTerm,
+        ...(filters.status && { status: filters.status as PaymentStatus }),
+        ...(filters.groupId && { groupId: filters.groupId }),
+        ...(filters.contactId && { contactId: filters.contactId }),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
+      };
+      
+      await fetchPayments(apiFilter);
+    } catch (err: any) {
+      showToast(err.message || 'خطا در بارگذاری پرداخت‌ها', 'error');
+    }
+  };
+
+  // بارگذاری مجدد دستی
+  const handleRefresh = () => {
+    loadPayments();
+  };
+  // تغییر صفحه جدول
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
+  // تغییر تعداد ردیف‌های هر صفحه
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(0); // بازگشت به صفحه اول
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // جستجو در پرداخت‌ها
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    setPage(0);
   };
 
-  const handleFilterChange = (newFilters: typeof filters) => {
+  // باز کردن دیالوگ فیلتر
+  const handleOpenFilterDialog = () => {
+    setFilterDialogOpen(true);
+  };
+
+  // اعمال فیلترها
+  const handleApplyFilters = (newFilters: typeof filters) => {
     setFilters(newFilters);
-    setPage(0);
-    setFilterOpen(false);
+    setFilterDialogOpen(false);
+    setPage(0); // بازگشت به صفحه اول
   };
 
+  // شمارش تعداد فیلترهای فعال
+  const countActiveFilters = (): number => {
+    return Object.values(filters).filter(Boolean).length;
+  };
+
+  // بررسی وجود فیلتر فعال
+  const hasActiveFilters = (): boolean => {
+    return countActiveFilters() > 0;
+  };
+  // باز کردن دیالوگ تأیید حذف
   const handleDeleteClick = (paymentId: number) => {
     setSelectedPaymentId(paymentId);
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (selectedPaymentId) {
-      try {
-        await deletePayment(selectedPaymentId);
-        enqueueSnackbar('درخواست پرداخت با موفقیت حذف شد', { variant: 'success' });
-        fetchPayments({
-          page: page + 1,
-          limit: rowsPerPage,
-          search: searchTerm,
-          ...filters,
-        });
-      } catch (error) {
-        enqueueSnackbar('خطا در حذف درخواست پرداخت', { variant: 'error' });
-      }
-    }
-    setDeleteDialogOpen(false);
-  };
-
-  const handleSendNotification = async (paymentId: number) => {
+  // حذف پرداخت
+  const handleConfirmDelete = async () => {
+    if (!selectedPaymentId) return;
+    
     try {
-      await sendNotification(paymentId);
-      enqueueSnackbar('پیامک با موفقیت ارسال شد', { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar('خطا در ارسال پیامک', { variant: 'error' });
+      setDeleting(true);
+      await deletePayment(selectedPaymentId);
+      showToast('درخواست پرداخت با موفقیت حذف شد', 'success');
+      loadPayments(); // بارگذاری مجدد لیست
+    } catch (err: any) {
+      showToast(err.message || 'خطا در حذف درخواست پرداخت', 'error');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setSelectedPaymentId(null);
     }
   };
 
-  if (error) {
-    return (
-      <Box p={3}>
-        <Typography color="error">
-          خطا در دریافت لیست پرداخت‌ها: {error}
-        </Typography>
-      </Box>
-    );
-  }
+  // ارسال پیامک
+  const handleSendSms = async (paymentId: number) => {
+    try {
+      setSendingSms(true);
+      setSendingSmsId(paymentId);
+      
+      const result = await sendPaymentNotification(paymentId);
+      
+      if (result.success) {
+        showToast('پیامک با موفقیت ارسال شد', 'success');
+        loadPayments(); // به‌روزرسانی لیست برای نمایش وضعیت جدید ارسال پیامک
+      } else {
+        showToast(result.message || 'خطا در ارسال پیامک', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'خطا در ارسال پیامک', 'error');
+    } finally {
+      setSendingSms(false);
+      setSendingSmsId(null);
+    }
+  };
 
+  // تغییر وضعیت پرداخت به "پرداخت شده"
+  const handleMarkAsPaid = async (paymentId: number) => {
+    try {
+      await changePaymentStatus(paymentId, 'PAID');
+      showToast('وضعیت پرداخت با موفقیت به‌روزرسانی شد', 'success');
+      loadPayments(); // بارگذاری مجدد لیست
+    } catch (err: any) {
+      showToast(err.message || 'خطا در تغییر وضعیت پرداخت', 'error');
+    }
+  };
+  // رندر صفحه
   return (
     <Box p={3}>
-      <Card>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center" marginBottom={2}>
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="h5" component="h1">
-                مدیریت پرداخت‌ها
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={8}>
-              <Box display="flex" gap={1} justifyContent="flex-end">
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddIcon />}
-                  onClick={() => navigate('/payments/new')}
-                >
-                  پرداخت جدید
-                </Button>
-              </Box>
-            </Grid>
+      {/* هدر صفحه */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6}>
+            <Typography variant="h5" display="flex" alignItems="center" gap={1}>
+              <MoneyIcon color="primary" />
+              مدیریت درخواست‌های پرداخت
+            </Typography>
           </Grid>
+          <Grid item xs={12} sm={6}>
+            <Box display="flex" justifyContent={{ xs: 'flex-start', sm: 'flex-end' }} gap={1}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/payments/new')}
+              >
+                افزودن پرداخت جدید
+              </Button>
+              <Tooltip title="بارگذاری مجدد">
+                <IconButton onClick={handleRefresh} disabled={loading}>
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
 
-          <Grid container spacing={2} alignItems="center" marginBottom={2}>
-            <Grid item xs={12} sm={6} md={4}>
-              <TextField
-                fullWidth
+      {/* باکس جستجو و فیلتر */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              placeholder="جستجو در پرداخت‌ها..."
+              value={searchTerm}
+              onChange={handleSearch}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box display="flex" justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}>
+              <Button
                 variant="outlined"
-                placeholder="جستجو..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                InputProps={{
-                  startAdornment: <SearchIcon color="action" />,
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={8}>
-              <Box display="flex" gap={1} justifyContent="flex-end">
-                <Button
-                  variant="outlined"
-                  startIcon={<FilterIcon />}
-                  onClick={() => setFilterOpen(true)}
-                >
-                  فیلتر
-                </Button>
-              </Box>
-            </Grid>
+                startIcon={
+                  hasActiveFilters() ? (
+                    <Badge badgeContent={countActiveFilters()} color="primary">
+                      <FilterIcon />
+                    </Badge>
+                  ) : (
+                    <FilterIcon />
+                  )
+                }
+                onClick={handleOpenFilterDialog}
+                color={hasActiveFilters() ? 'primary' : 'inherit'}
+              >
+                فیلتر
+              </Button>
+            </Box>
           </Grid>
+        </Grid>
+      </Paper>
 
-          <TableContainer component={Paper}>
-            <Table>
+      {/* نمایش خطا */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      {/* جدول پرداخت‌ها */}
+      <Card>
+        <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>عنوان</TableCell>
-                  <TableCell>مبلغ (ریال)</TableCell>
+                  <TableCell align="center">مبلغ (ریال)</TableCell>
                   <TableCell>ذینفع</TableCell>
                   <TableCell>تاریخ</TableCell>
-                  <TableCell>وضعیت</TableCell>
-                  <TableCell>عملیات</TableCell>
+                  <TableCell align="center">وضعیت</TableCell>
+                  <TableCell align="center">عملیات</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{payment.title}</TableCell>
-                    <TableCell>{formatNumber(payment.amount)}</TableCell>
-                    <TableCell>
-                      {payment.beneficiaryName || payment.contact?.companyName}
+                {loading && Array.from(new Array(rowsPerPage)).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`}>
+                    <TableCell colSpan={6} align="center">
+                      <CircularProgress size={24} />
                     </TableCell>
-                    <TableCell>{formatDateTime(payment.effectiveDate)}</TableCell>
+                  </TableRow>
+                ))}
+                
+                {!loading && payments.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <Box py={3}>
+                        <AssignmentIcon color="disabled" sx={{ fontSize: 40, mb: 1 }} />
+                        <Typography color="text.secondary">
+                          {searchTerm || hasActiveFilters()
+                            ? 'نتیجه‌ای برای جستجوی شما یافت نشد'
+                            : 'هنوز درخواست پرداختی ثبت نشده است'}
+                        </Typography>
+                        
+                        {(searchTerm || hasActiveFilters()) ? (
+                          <Button 
+                            variant="text" 
+                            onClick={() => {
+                              setSearchTerm('');
+                              setFilters({
+                                status: '',
+                                startDate: '',
+                                endDate: '',
+                                groupId: '',
+                                contactId: '',
+                              });
+                            }}
+                            sx={{ mt: 1 }}
+                          >
+                            پاک کردن فیلترها
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => navigate('/payments/new')}
+                            startIcon={<AddIcon />}
+                            sx={{ mt: 1 }}
+                          >
+                            ایجاد اولین درخواست
+                          </Button>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                )}
+
+                {!loading && payments.map((payment) => (
+                  <TableRow
+                    key={payment.id}
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {payment.title}
+                    </TableCell>
+                    <TableCell align="center">
+                      {payment.amount.toLocaleString()}
+                    </TableCell>
                     <TableCell>
+                      {payment.beneficiaryName || 
+                       payment.contact?.companyName || 
+                       '-'}
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(payment.effectiveDate)}
+                    </TableCell>
+                    <TableCell align="center">
                       <PaymentStatusChip status={payment.status} />
+                      {payment.isSMSSent && (
+                        <Chip
+                          size="small"
+                          label="پیامک ارسال شده"
+                          color="info"
+                          variant="outlined"
+                          sx={{ ml: 0.5, fontSize: '0.7rem' }}
+                        />
+                      )}
                     </TableCell>
-                    <TableCell>
-                      <Box display="flex" gap={1}>
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={1} justifyContent="center">
                         <Tooltip title="ویرایش">
                           <IconButton
                             size="small"
+                            color="primary"
                             onClick={() => navigate(`/payments/${payment.id}/edit`)}
                           >
-                            <EditIcon />
+                            <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {payment.status === 'PAID' && (
+
+                        <Tooltip title="مدیریت تصاویر">
+                          <IconButton
+                            size="small"
+                            color="secondary"
+                            onClick={() => navigate(`/payments/${payment.id}/images`)}
+                          >
+                            <ImageIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+
+                        {payment.status === 'PAID' && 
+                         (payment.beneficiaryPhone || payment.contact?.accountantPhone) && (
                           <Tooltip title="ارسال پیامک">
                             <IconButton
                               size="small"
-                              onClick={() => handleSendNotification(payment.id)}
+                              color="info"
+                              onClick={() => handleSendSms(payment.id)}
+                              disabled={sendingSms && sendingSmsId === payment.id}
                             >
-                              <SendIcon />
+                              {sendingSms && sendingSmsId === payment.id ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <SendIcon fontSize="small" />
+                              )}
                             </IconButton>
                           </Tooltip>
                         )}
-                        <Tooltip title="تصاویر">
-                          <IconButton
-                            size="small"
-                            onClick={() => navigate(`/payments/${payment.id}/images`)}
-                          >
-                            <ImageIcon />
-                          </IconButton>
-                        </Tooltip>
+
                         {payment.status === 'PENDING' && (
                           <Tooltip title="حذف">
                             <IconButton
                               size="small"
+                              color="error"
                               onClick={() => handleDeleteClick(payment.id)}
                             >
-                              <DeleteIcon />
+                              <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}
-                      </Box>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
-
+          
+          {/* پیجینیشن */}
           <TablePagination
             component="div"
             count={totalItems}
@@ -269,27 +490,30 @@ const PaymentsPage: React.FC = () => {
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="تعداد در صفحه"
+            labelRowsPerPage="تعداد در هر صفحه:"
             labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} از ${count}`
+              `${from}-${to} از ${count !== -1 ? count : `بیش از ${to}`}`
             }
+            rowsPerPageOptions={[5, 10, 25, 50]}
           />
         </CardContent>
       </Card>
-
+      {/* دیالوگ فیلتر */}
       <PaymentFilterDialog
-        open={filterOpen}
-        filters={filters}
-        onClose={() => setFilterOpen(false)}
-        onApply={handleFilterChange}
+        open={filterDialogOpen}
+        initialValues={filters}
+        onClose={() => setFilterDialogOpen(false)}
+        onApply={handleApplyFilters}
       />
 
+      {/* دیالوگ تأیید حذف */}
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={handleConfirmDelete}
         title="حذف درخواست پرداخت"
-        content="آیا از حذف این درخواست پرداخت اطمینان دارید؟"
+        content="آیا از حذف این درخواست پرداخت اطمینان دارید؟ این عمل غیرقابل بازگشت است."
+        loading={deleting}
       />
     </Box>
   );

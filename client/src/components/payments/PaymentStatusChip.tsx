@@ -1,18 +1,31 @@
+// client/src/components/payments/PaymentStatusChip.tsx
+// کامپوننت نمایش‌دهنده وضعیت پرداخت
+
 import React from 'react';
-import { Chip } from '@mui/material';
+import { Chip, ChipProps } from '@mui/material';
 import { PaymentStatus } from '../../types/payment.types';
 
 interface PaymentStatusChipProps {
   status: PaymentStatus;
+  size?: ChipProps['size'];
+  onClick?: () => void;
 }
 
-const PaymentStatusChip: React.FC<PaymentStatusChipProps> = ({ status }) => {
+/**
+ * کامپوننت نمایش وضعیت پرداخت با رنگ‌های متناسب
+ */
+const PaymentStatusChip: React.FC<PaymentStatusChipProps> = ({
+  status,
+  size = 'small',
+  onClick,
+}) => {
+  // تعیین تنظیمات هر وضعیت
   const getStatusConfig = (status: PaymentStatus) => {
     switch (status) {
       case 'PENDING':
         return {
           label: 'در انتظار',
-          color: 'default' as const,
+          color: 'warning' as const,
         };
       case 'APPROVED':
         return {
@@ -43,9 +56,17 @@ const PaymentStatusChip: React.FC<PaymentStatusChipProps> = ({ status }) => {
     <Chip
       label={config.label}
       color={config.color}
-      size="small"
+      size={size}
+      onClick={onClick}
+      clickable={!!onClick}
+      sx={{
+        fontWeight: 'medium',
+        '& .MuiChip-label': {
+          px: 1,
+        },
+      }}
     />
   );
 };
 
-export default PaymentStatusChip; 
+export default PaymentStatusChip;

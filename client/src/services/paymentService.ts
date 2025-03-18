@@ -9,23 +9,35 @@ import {
   UpdatePaymentDto,
   PaymentImage,
   PaginatedPaymentsResponse,
+  PaymentStatus
 } from '../types/payment.types';
 import { formatDateToISO } from '../utils/dateUtils';
+import { convertPersianToEnglishNumbers } from '../utils/stringUtils';
 
-// دریافت لیست پرداخت‌ها
-const getPayments = async (params: PaymentFilter = {
+/**
+ * دریافت لیست درخواست‌های پرداخت با فیلتر
+ */
+const getPayments = async (filters: PaymentFilter = {
   page: 1,
   limit: 10,
 }): Promise<PaginatedPaymentsResponse> => {
   try {
     // تبدیل تاریخ‌ها به فرمت ISO
-    const formattedParams = {
-      ...params,
-      startDate: params.startDate ? formatDateToISO(params.startDate) : undefined,
-      endDate: params.endDate ? formatDateToISO(params.endDate) : undefined,
-    };
+    const formattedFilters = { ...filters };
     
-    const response = await api.get('/payments', { params: formattedParams });
+    if (filters.startDate) {
+      formattedFilters.startDate = formatDateToISO(filters.startDate);
+    }
+    
+    if (filters.endDate) {
+      formattedFilters.endDate = formatDateToISO(filters.endDate);
+    }
+    
+    // تبدیل شماره‌های صفحه و تعداد به عدد
+    formattedFilters.page = Number(filters.page);
+    formattedFilters.limit = Number(filters.limit);
+    
+    const response = await api.get('/payments', { params: formattedFilters });
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -34,7 +46,9 @@ const getPayments = async (params: PaymentFilter = {
   }
 };
 
-// دریافت جزئیات یک پرداخت
+/**
+ * دریافت اطلاعات یک درخواست پرداخت با شناسه
+ */
 const getPaymentById = async (id: number): Promise<PaymentRequest> => {
   try {
     const response = await api.get(`/payments/${id}`);
@@ -46,13 +60,26 @@ const getPaymentById = async (id: number): Promise<PaymentRequest> => {
   }
 };
 
-// ایجاد درخواست پرداخت جدید
+/**
+ * ایجاد درخواست پرداخت جدید
+ */
 const createPayment = async (paymentData: CreatePaymentDto): Promise<PaymentRequest> => {
   try {
+    // تبدیل اعداد فارسی به انگلیسی
+    const amount = convertPersianToEnglishNumbers(paymentData.amount.toString());
+    const beneficiaryPhone = paymentData.beneficiaryPhone ? 
+      convertPersianToEnglishNumbers(paymentData.beneficiaryPhone) : 
+      undefined;
+    
     // تبدیل تاریخ به فرمت ISO
+    const effectiveDate = formatDateToISO(paymentData.effectiveDate);
+    
+    // ایجاد داده‌های پرداخت
     const formattedData = {
       ...paymentData,
-      effectiveDate: formatDateToISO(paymentData.effectiveDate),
+      amount: parseInt(amount),
+      beneficiaryPhone,
+      effectiveDate
     };
     
     const response = await api.post('/payments', formattedData);
@@ -64,45 +91,90 @@ const createPayment = async (paymentData: CreatePaymentDto): Promise<PaymentRequ
   }
 };
 
-// به‌روزرسانی درخواست پرداخت
+/**
+ * به‌روزرسانی درخواست پرداخت
+ */
 const updatePayment = async (id: number, paymentData: UpdatePaymentDto): Promise<PaymentRequest> => {
   try {
-    // تبدیل تاریخ به فرمت ISO اگر وجود داشته باشد
-    const formattedData = {
-      ...paymentData,
-      effectiveDate: paymentData.effectiveDate ? formatDateToISO(paymentData.effectiveDate) : undefined,
-    };
+    // فرمت کردن داده‌ها
+    const formattedData: any = { ...paymentData };
+    
+    // تبدیل مبلغ اگر وجود داشته باشد
+    if (formattedData.amount !== undefined) {
+      formattedData.amount = parseInt(convertPersianToEnglishNumbers(formattedData.amount.toString()));
+    }
+    
+    // تبدیل شماره موبایل اگر وجود داشته باشد
+    if (formattedData.beneficiaryPhone) {
+      formattedData.beneficiaryPhone = convertPersianToEnglishNumbers(formattedData.beneficiaryPhone);
+    }
+    
+    // تبدیل تاریخ اگر وجود داشته باشد
+    if (formattedData.effectiveDate) {
+      formattedData.effectiveDate = formatDateToISO(formattedData.effectiveDate);
+    }
     
     const response = await api.put(`/payments/${id}`, formattedData);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || 'خطا در به‌روزرسانی پرداخت'
+      error.response?.data?.message || 'خطا در به‌روزرسانی درخواست پرداخت'
     );
   }
 };
 
-// آپلود تصویر فیش پرداخت
-const uploadPaymentImage = async (paymentId: number, imageFile: File): Promise<PaymentImage> => {
+/**
+ * تغییر وضعیت پرداخت
+ */
+const changePaymentStatus = async (id: number, status: PaymentStatus): Promise<PaymentRequest> => {
+  try {
+    const response = await api.patch(`/payments/${id}/status`, { status });
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || 'خطا در تغییر وضعیت پرداخت'
+    );
+  }
+};
+
+/**
+ * حذف درخواست پرداخت
+ */
+const deletePayment = async (id: number): Promise<void> => {
+  try {
+    await api.delete(`/payments/${id}`);
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || 'خطا در حذف درخواست پرداخت'
+    );
+  }
+};
+
+/**
+ * آپلود تصویر فیش پرداخت
+ */
+const uploadPaymentImage = async (paymentId: number, image: File): Promise<PaymentImage> => {
   try {
     const formData = new FormData();
-    formData.append('image', imageFile);
+    formData.append('image', image);
     
     const response = await api.post(`/payments/${paymentId}/images`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+        'Content-Type': 'multipart/form-data'
+      }
     });
     
     return response.data.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || 'خطا در آپلود تصویر'
+      error.response?.data?.message || 'خطا در آپلود تصویر فیش پرداخت'
     );
   }
 };
 
-// دریافت تصاویر پرداخت
+/**
+ * دریافت تصاویر یک پرداخت
+ */
 const getPaymentImages = async (paymentId: number): Promise<PaymentImage[]> => {
   try {
     const response = await api.get(`/payments/${paymentId}/images`);
@@ -114,26 +186,29 @@ const getPaymentImages = async (paymentId: number): Promise<PaymentImage[]> => {
   }
 };
 
-// تغییر وضعیت پرداخت
-const changePaymentStatus = async (id: number, status: string): Promise<PaymentRequest> => {
+/**
+ * حذف تصویر پرداخت
+ */
+const deletePaymentImage = async (paymentId: number, imageId: number): Promise<void> => {
   try {
-    const response = await api.patch(`/payments/${id}/status`, { status });
-    return response.data.data;
+    await api.delete(`/payments/${paymentId}/images/${imageId}`);
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || 'خطا در تغییر وضعیت پرداخت'
+      error.response?.data?.message || 'خطا در حذف تصویر پرداخت'
     );
   }
 };
 
-// ارسال پیامک اطلاع‌رسانی
-const sendPaymentSMS = async (paymentId: number): Promise<any> => {
+/**
+ * ارسال اطلاع‌رسانی پیامکی
+ */
+const sendPaymentNotification = async (paymentId: number): Promise<any> => {
   try {
     const response = await api.post(`/payments/${paymentId}/notify`);
     return response.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || 'خطا در ارسال پیامک'
+      error.response?.data?.message || 'خطا در ارسال اطلاع‌رسانی پیامکی'
     );
   }
 };
@@ -143,8 +218,10 @@ export default {
   getPaymentById,
   createPayment,
   updatePayment,
+  changePaymentStatus,
+  deletePayment,
   uploadPaymentImage,
   getPaymentImages,
-  changePaymentStatus,
-  sendPaymentSMS,
+  deletePaymentImage,
+  sendPaymentNotification
 };

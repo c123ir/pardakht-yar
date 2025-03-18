@@ -1,45 +1,51 @@
+// client/src/components/common/DeleteConfirmDialog.tsx
+// کامپوننت دیالوگ تأیید حذف
+
 import React from 'react';
 import {
+  Button,
   Dialog,
-  DialogTitle,
+  DialogActions,
   DialogContent,
   DialogContentText,
-  DialogActions,
-  Button,
+  DialogTitle,
+  CircularProgress,
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
-  title?: string;
-  message?: string;
+  onClose: () => void;
   onConfirm: () => void;
-  onCancel: () => void;
+  title?: string;
+  content?: string;
   loading?: boolean;
 }
 
+/**
+ * کامپوننت دیالوگ تأیید حذف قابل استفاده در سراسر برنامه
+ */
 const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   open,
-  title = 'تایید حذف',
-  message = 'آیا از حذف این مورد اطمینان دارید؟',
+  onClose,
   onConfirm,
-  onCancel,
+  title = 'تأیید حذف',
+  content = 'آیا از حذف این مورد اطمینان دارید؟ این عمل غیرقابل بازگشت است.',
   loading = false,
 }) => {
   return (
     <Dialog
       open={open}
-      onClose={onCancel}
-      aria-labelledby="delete-confirm-dialog-title"
-      aria-describedby="delete-confirm-dialog-description"
+      onClose={loading ? undefined : onClose}
+      maxWidth="xs"
+      fullWidth
     >
-      <DialogTitle id="delete-confirm-dialog-title">{title}</DialogTitle>
+      <DialogTitle>{title}</DialogTitle>
       <DialogContent>
-        <DialogContentText id="delete-confirm-dialog-description">
-          {message}
-        </DialogContentText>
+        <DialogContentText>{content}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel} disabled={loading}>
+        <Button onClick={onClose} disabled={loading} color="inherit">
           انصراف
         </Button>
         <Button
@@ -47,7 +53,7 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           color="error"
           variant="contained"
           disabled={loading}
-          autoFocus
+          startIcon={loading ? <CircularProgress size={20} /> : <DeleteIcon />}
         >
           حذف
         </Button>
@@ -56,4 +62,4 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   );
 };
 
-export default DeleteConfirmDialog; 
+export default DeleteConfirmDialog;
