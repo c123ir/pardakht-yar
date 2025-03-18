@@ -2,7 +2,7 @@
 // میدل‌ور احراز هویت و مدیریت دسترسی
 
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, VerifyOptions } from 'jsonwebtoken';
 import config from '../config/app';
 import logger from '../config/logger';
 import { Role } from '@prisma/client';
@@ -35,8 +35,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     // استخراج توکن
     const token = authHeader.split(' ')[1];
     
-    // تایید توکن
-    const decoded = jwt.verify(token, config.jwt.secret) as jwt.JwtPayload & {
+    // تایید توکن با رفع مشکل تایپ
+    const jwtSecret = String(config.jwt.secret);
+    
+    const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload & {
       id: number;
       username: string;
       role: Role;
@@ -77,7 +79,8 @@ export const authorize = (roles: Role[]) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRole = req.user.role as unknown as Role;
+    if (!roles.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: 'دسترسی غیرمجاز: شما مجوز لازم برای این عملیات را ندارید',

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",
     "start": "node dist/index.js",
+    "start:js": "ts-node-dev --transpile-only src/index.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "db:generate": "prisma generate",
@@ -48,6 +49,7 @@
     "eslint": "^8.44.0",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.2"
   }
 }

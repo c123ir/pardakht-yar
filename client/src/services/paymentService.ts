@@ -2,7 +2,7 @@
 // سرویس مدیریت پرداخت‌ها
 
 import api from './api';
-import { PaymentRequest, PaymentImage } from '../types/payment.types';
+import { PaymentRequest } from '../types/payment.types';
 
 // تایپ پارامترهای جستجو
 interface PaymentSearchParams {

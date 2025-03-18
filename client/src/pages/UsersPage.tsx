@@ -36,6 +36,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { User, Role, CreateUserInput, UpdateUserInput } from '../types/user.types';
 import userService from '../services/userService';
 import { useAuth } from '../hooks/useAuth';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -115,11 +116,21 @@ const UsersPage: React.FC = () => {
   };
 
   // تغییر مقادیر فرم
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleTextFieldChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setUserInput((prev) => ({
       ...prev,
-      [name as string]: value,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const { name, value } = e.target;
+    setUserInput((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
 
@@ -331,7 +342,7 @@ const UsersPage: React.FC = () => {
                 autoComplete="username"
                 autoFocus
                 value={userInput.username || ''}
-                onChange={handleInputChange}
+                onChange={handleTextFieldChange}
               />
             )}
             
@@ -343,7 +354,7 @@ const UsersPage: React.FC = () => {
               label="نام کامل"
               name="fullName"
               value={userInput.fullName || ''}
-              onChange={handleInputChange}
+              onChange={handleTextFieldChange}
             />
             
             <TextField
@@ -355,7 +366,7 @@ const UsersPage: React.FC = () => {
               type="email"
               autoComplete="email"
               value={userInput.email || ''}
-              onChange={handleInputChange}
+              onChange={handleTextFieldChange}
             />
             
             <TextField
@@ -365,7 +376,7 @@ const UsersPage: React.FC = () => {
               label="شماره موبایل"
               name="phone"
               value={userInput.phone || ''}
-              onChange={handleInputChange}
+              onChange={handleTextFieldChange}
             />
             
             <TextField
@@ -378,7 +389,7 @@ const UsersPage: React.FC = () => {
               autoComplete="new-password"
               required={dialogMode === 'create'}
               value={userInput.password || ''}
-              onChange={handleInputChange}
+              onChange={handleTextFieldChange}
             />
             
             <FormControl fullWidth margin="normal">
@@ -389,7 +400,7 @@ const UsersPage: React.FC = () => {
                 name="role"
                 value={userInput.role || 'ADMIN'}
                 label="نقش کاربر"
-                onChange={handleInputChange}
+                onChange={handleSelectChange}
               >
                 <MenuItem value="ADMIN">مدیر سیستم</MenuItem>
                 <MenuItem value="FINANCIAL_MANAGER">مدیر مالی</MenuItem>

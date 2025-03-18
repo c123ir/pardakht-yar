@@ -2,7 +2,7 @@
 // مسیرهای API مدیریت تنظیمات
 
 import express from 'express';
-import { getSmsSettings, updateSmsSettings, sendTestSms } from '../controllers/settingController';
+import { getSmsSettings, updateSmsSettings, sendTestSms, getSmsDeliveryStatus } from '../controllers/settingController';
 import { authenticate, authorize } from '../middleware/auth';
 
 const router = express.Router();
@@ -14,5 +14,6 @@ router.use(authenticate);
 router.get('/sms', authorize(['ADMIN']), getSmsSettings);
 router.put('/sms', authorize(['ADMIN']), updateSmsSettings);
 router.post('/sms/test', authorize(['ADMIN']), sendTestSms);
+router.get('/sms/delivery/:messageId', authorize(['ADMIN']), getSmsDeliveryStatus);
 
 export default router;

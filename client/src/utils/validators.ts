@@ -64,7 +64,7 @@ export const isValidIBAN = (iban: string): boolean => {
   
   // IBAN های ایرانی همیشه با IR شروع می
 
-  cat >> client/src/utils/validators.ts << 'EOF'
+
   // IBAN های ایرانی همیشه با IR شروع می‌شوند و ۲۴ رقم بعد از IR دارند
   // بررسی دقیق‌تر نیازمند محاسبات بیشتر است که اینجا ساده‌سازی شده
   return true;

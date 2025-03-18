@@ -4,7 +4,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { Request } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import config from '../config/app';
 import logger from '../config/logger';
 
@@ -55,29 +55,27 @@ export const uploadPaymentImage = upload.single('image');
 // میدل‌ور مدیریت خطای آپلود
 export const handleUploadError = (error: Error, req: Request, res: Response, next: NextFunction) => {
   if (error instanceof multer.MulterError) {
-    logger.error('خطای آپلود فایل Multer', error);
-    
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
-        success: false,
-        message: `حجم فایل نباید بیشتر از ${config.upload.maxSize / (1024 * 1024)} مگابایت باشد`,
+        status: 'error',
+        message: 'حجم فایل بیشتر از حد مجاز است'
       });
     }
     
     return res.status(400).json({
-      success: false,
+      status: 'error',
       message: 'خطا در آپلود فایل',
-      error: error.message,
+      error: error.message
     });
   }
-  
+
   if (error) {
-    logger.error('خطای آپلود فایل', error);
     return res.status(400).json({
-      success: false,
-      message: error.message,
+      status: 'error',
+      message: 'خطای غیرمنتظره در آپلود فایل',
+      error: error.message
     });
   }
-  
+
   next();
 };

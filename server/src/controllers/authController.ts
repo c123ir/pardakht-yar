@@ -3,10 +3,12 @@
 
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import prisma from '../lib/prisma';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 import config from '../config/app';
 import logger from '../config/logger';
+
+const prisma = new PrismaClient();
 
 // ورود به سیستم
 export const login = async (req: Request, res: Response) => {
@@ -17,7 +19,7 @@ export const login = async (req: Request, res: Response) => {
     if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message: 'نام کاربری و رمز عبور الزامی است',
+        message: 'لطفا نام کاربری و رمز عبور خود را وارد کنید',
       });
     }
 
@@ -27,20 +29,34 @@ export const login = async (req: Request, res: Response) => {
     });
 
     // اگر کاربر یافت نشد یا غیرفعال است
-    if (!user || !user.isActive) {
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'نام کاربری یا رمز عبور اشتباه است',
+        message: 'نام کاربری وارد شده اشتباه است',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'حساب کاربری شما غیرفعال شده است. لطفا با پشتیبانی تماس بگیرید',
       });
     }
 
     // بررسی صحت رمز عبور
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        message: 'اطلاعات ورود نامعتبر است',
+      });
+    }
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
     
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'نام کاربری یا رمز عبور اشتباه است',
+        message: 'رمز عبور وارد شده اشتباه است',
       });
     }
 
@@ -50,12 +66,14 @@ export const login = async (req: Request, res: Response) => {
       data: { lastLogin: new Date() },
     });
 
-    // ایجاد توکن
-    const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expire }
-    );
+    // ایجاد توکن با رفع مشکل تایپ
+    const jwtSecret = String(config.jwt.secret);
+    const payload = { id: user.id, username: user.username, role: user.role };
+    const options: SignOptions = { 
+      expiresIn: config.jwt.expire as jwt.SignOptions['expiresIn']
+    };
+    
+    const token = jwt.sign(payload, jwtSecret, options);
 
     // ارسال پاسخ موفقیت‌آمیز
     return res.status(200).json({

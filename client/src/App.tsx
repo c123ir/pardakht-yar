@@ -12,6 +12,7 @@ import { prefixer } from 'stylis';
 import AppRoutes from './routes';
 import theme from './styles/theme';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 // پیکربندی RTL برای Material-UI
 const cacheRtl = createCache({
@@ -26,7 +27,9 @@ const App: React.FC = () => {
         <CssBaseline />
         <Router>
           <AuthProvider>
-            <AppRoutes />
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
           </AuthProvider>
         </Router>
       </ThemeProvider>

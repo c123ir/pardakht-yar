@@ -2,28 +2,27 @@
 // کامپوننت منوی کناری
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
+import {
   Drawer,
-  IconButton,
-  Divider,
   List,
   ListItem,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
+  IconButton,
+  Divider,
+  ListItemButton,
   Toolbar,
-  Box,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import PaymentsIcon from '@mui/icons-material/Payments';
-import GroupsIcon from '@mui/icons-material/Groups';
+import PaymentIcon from '@mui/icons-material/Payment';
+import GroupIcon from '@mui/icons-material/Group';
 import ContactsIcon from '@mui/icons-material/Contacts';
-import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
 import SmsIcon from '@mui/icons-material/Sms';
+import { useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 const drawerWidth = 240;
@@ -68,8 +67,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
   // آیتم‌های منوی اصلی
   const mainMenuItems = [
     { text: 'داشبورد', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'پرداخت‌ها', icon: <PaymentsIcon />, path: '/payments' },
-    { text: 'گروه‌ها', icon: <GroupsIcon />, path: '/groups' },
+    { text: 'پرداخت‌ها', icon: <PaymentIcon />, path: '/payments' },
+    { text: 'گروه‌ها', icon: <GroupIcon />, path: '/groups' },
     { text: 'طرف‌حساب‌ها', icon: <ContactsIcon />, path: '/contacts' },
   ];
 

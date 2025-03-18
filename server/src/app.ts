@@ -19,10 +19,13 @@ const app: Express = express();
 
 // میدل‌ورهای عمومی
 //app.use(helmet()); // امنیت هدرها
-app.use(cors({ 
+app.use(cors({
   origin: '*',
-  credentials: true,
-})); // CORS
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  credentials: true
+}));
 app.use(compression()); // فشرده‌سازی پاسخ‌ها
 app.use(express.json()); // پارس کردن JSON در بدنه درخواست
 app.use(express.urlencoded({ extended: true })); // پارس کردن URL-encoded در بدنه درخواست

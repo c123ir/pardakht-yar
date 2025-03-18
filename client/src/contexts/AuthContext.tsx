@@ -76,9 +76,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(userData);
       navigate('/dashboard');
-    } catch (err) {
-      setError((err as Error).message);
-      throw err;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'خطا در ورود به سیستم';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

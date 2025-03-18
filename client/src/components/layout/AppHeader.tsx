@@ -2,7 +2,7 @@
 // کامپوننت هدر برنامه
 
 import React from 'react';
-import { 
+import {
   AppBar,
   Toolbar,
   Typography,
@@ -16,7 +16,6 @@ import {
   ListItemIcon,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -86,6 +85,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ open, children }) => {
         >
           پرداخت‌یار
         </Typography>
+        
+        {/* نمایش نام کاربر */}
+        {user && (
+          <Typography
+            variant="subtitle1"
+            color="inherit"
+            sx={{ ml: 2 }}
+          >
+            {user.fullName}
+          </Typography>
+        )}
         
         {/* آیکون اعلان‌ها */}
         <IconButton color="inherit">
