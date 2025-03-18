@@ -1,10 +1,11 @@
 // server/src/middleware/auth.ts
-// میدل‌ور احراز هویت
+// میدل‌ور احراز هویت و مدیریت دسترسی
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config/app';
 import logger from '../config/logger';
+import { Role } from '@prisma/client';
 
 // گسترش تایپ Express Request برای اضافه کردن اطلاعات کاربر
 declare global {
@@ -13,7 +14,7 @@ declare global {
       user?: {
         id: number;
         username: string;
-        role: string;
+        role: Role;
       };
     }
   }
@@ -34,11 +35,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     // استخراج توکن
     const token = authHeader.split(' ')[1];
     
-    // تایید توکن - اصلاح شده
+    // تایید توکن
     const decoded = jwt.verify(token, config.jwt.secret) as jwt.JwtPayload & {
       id: number;
       username: string;
-      role: string;
+      role: Role;
     };
 
     // افزودن اطلاعات کاربر به درخواست
@@ -64,4 +65,25 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       message: 'توکن نامعتبر است',
     });
   }
+};
+
+// میدل‌ور مدیریت دسترسی بر اساس نقش
+export const authorize = (roles: Role[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'دسترسی غیرمجاز: کاربر احراز هویت نشده است',
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'دسترسی غیرمجاز: شما مجوز لازم برای این عملیات را ندارید',
+      });
+    }
+
+    next();
+  };
 };

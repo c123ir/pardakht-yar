@@ -12,13 +12,15 @@ import logger from './config/logger';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import settingRoutes from './routes/settingRoutes';
+import { errorHandler, notFound } from './middleware/error';
+
 // ایجاد اپلیکیشن Express
 const app: Express = express();
 
 // میدل‌ورهای عمومی
-app.use(helmet()); // امنیت هدرها
+//app.use(helmet()); // امنیت هدرها
 app.use(cors({ 
-  origin: config.server.clientUrl,
+  origin: '*',
   credentials: true,
 })); // CORS
 app.use(compression()); // فشرده‌سازی پاسخ‌ها
@@ -36,11 +38,11 @@ app.use(
   express.static(path.join(__dirname, '../uploads'))
 );
 
-// مسیرهای API (در فازهای بعدی تکمیل خواهد شد)
-// app.use('/api/auth', authRoutes);
+// مسیرهای API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingRoutes);
+
 // صفحه اصلی API
 app.get('/api', (req: Request, res: Response) => {
   res.json({
@@ -50,22 +52,9 @@ app.get('/api', (req: Request, res: Response) => {
 });
 
 // مدیریت خطاهای 404
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    message: 'مسیر مورد نظر یافت نشد',
-  });
-});
+app.use(notFound);
 
-// مدیریت خطاها
-app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
-  logger.error(`خطا در پردازش درخواست: ${req.method} ${req.path}`, err);
-  
-  res.status(500).json({
-    success: false,
-    message: 'خطای سرور',
-    error: config.server.nodeEnv === 'development' ? err.message : undefined,
-  });
-});
+// مدیریت سایر خطاها
+app.use(errorHandler);
 
 export default app;
