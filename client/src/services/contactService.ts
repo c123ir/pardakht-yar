@@ -9,9 +9,11 @@ interface ContactSearchParams {
   page?: number;
   limit?: number;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
-// گرفتن لیست طرف‌حساب‌ها
+// دریافت لیست طرف‌حساب‌ها
 const getContacts = async (params: ContactSearchParams = {}) => {
   try {
     const response = await api.get('/contacts', { params });
@@ -23,7 +25,7 @@ const getContacts = async (params: ContactSearchParams = {}) => {
   }
 };
 
-// گرفتن جزئیات یک طرف‌حساب
+// دریافت جزئیات یک طرف‌حساب
 const getContactById = async (id: number) => {
   try {
     const response = await api.get(`/contacts/${id}`);
@@ -71,10 +73,23 @@ const deleteContact = async (id: number) => {
   }
 };
 
+// بازتولید توکن دسترسی
+const regenerateAccessToken = async (id: number) => {
+  try {
+    const response = await api.post(`/contacts/${id}/regenerate-token`);
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || 'خطا در بازتولید توکن دسترسی'
+    );
+  }
+};
+
 export default {
   getContacts,
   getContactById,
   createContact,
   updateContact,
   deleteContact,
+  regenerateAccessToken,
 };

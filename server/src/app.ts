@@ -1,5 +1,5 @@
 // server/src/app.ts
-// تنظیمات اصلی اپلیکیشن Express
+// به‌روزرسانی تنظیمات اصلی اپلیکیشن Express برای اضافه کردن مسیرهای API طرف‌حساب‌ها
 
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
@@ -12,6 +12,7 @@ import logger from './config/logger';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import settingRoutes from './routes/settingRoutes';
+import contactRoutes from './routes/contactRoutes'; // اضافه کردن مسیرهای طرف‌حساب‌ها
 import { errorHandler, notFound } from './middleware/error';
 
 // ایجاد اپلیکیشن Express
@@ -45,6 +46,7 @@ app.use(
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/contacts', contactRoutes); // اضافه کردن مسیرهای طرف‌حساب‌ها
 
 // صفحه اصلی API
 app.get('/api', (req: Request, res: Response) => {
