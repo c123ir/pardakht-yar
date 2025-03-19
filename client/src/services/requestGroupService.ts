@@ -4,7 +4,7 @@
 import axios from '../utils/axios';
 import { RequestGroup, ApiResponse, PaginatedResponse } from '../types/request.types';
 
-const API_URL = '/api/request-groups';
+const API_URL = '/request-groups';
 
 const requestGroupService = {
   // دریافت لیست گروه‌های درخواست
@@ -18,6 +18,17 @@ const requestGroupService = {
       return response.data;
     } catch (error) {
       console.error('خطا در دریافت گروه‌های درخواست:', error);
+      throw error;
+    }
+  },
+
+  // دریافت گروه‌های یک نوع درخواست
+  getGroupsByRequestType: async (requestTypeId: number, page = 1, limit = 10): Promise<PaginatedResponse<RequestGroup[]>> => {
+    try {
+      const response = await axios.get(`${API_URL}?requestTypeId=${requestTypeId}&page=${page}&limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error(`خطا در دریافت گروه‌های درخواست برای نوع درخواست ${requestTypeId}:`, error);
       throw error;
     }
   },
@@ -73,6 +84,17 @@ const requestGroupService = {
       return response.data;
     } catch (error) {
       console.error(`خطا در تغییر وضعیت گروه درخواست با شناسه ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // دریافت تمام گروه‌های فعال
+  getAllActiveGroups: async (): Promise<ApiResponse<RequestGroup[]>> => {
+    try {
+      const response = await axios.get(`${API_URL}/active`);
+      return response.data;
+    } catch (error) {
+      console.error('خطا در دریافت گروه‌های فعال:', error);
       throw error;
     }
   }

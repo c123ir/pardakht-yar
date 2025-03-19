@@ -4,7 +4,7 @@
 import axios from '../utils/axios';
 import { CreateRequestTypeDto, UpdateRequestTypeDto, ApiResponse, PaginatedResponse } from '../types/request.types';
 
-const API_URL = '/api/request-types';
+const API_URL = '/request-types';
 
 const requestTypeService = {
   // دریافت همه انواع درخواست

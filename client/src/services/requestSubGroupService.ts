@@ -4,7 +4,7 @@
 import axios from '../utils/axios';
 import { RequestSubGroup, ApiResponse, PaginatedResponse } from '../types/request.types';
 
-const API_URL = '/api/request-subgroups';
+const API_URL = '/request-subgroups';
 
 const requestSubGroupService = {
   // دریافت زیرگروه‌های یک گروه درخواست
@@ -85,4 +85,4 @@ const requestSubGroupService = {
   }
 };
 
-export default requestSubGroupService; 
+export default requestSubGroupService;
