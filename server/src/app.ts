@@ -14,6 +14,10 @@ import userRoutes from './routes/userRoutes';
 import settingRoutes from './routes/settingRoutes';
 import contactRoutes from './routes/contactRoutes'; // اضافه کردن مسیرهای طرف‌حساب‌ها
 import paymentRoutes from './routes/paymentRoutes'; // اضافه کردن مسیرهای پرداخت‌ها
+import requestTypeRoutes from './routes/requestTypeRoutes'; // اضافه کردن مسیرهای انواع درخواست‌ها
+import requestRoutes from './routes/requestRoutes'; // اضافه کردن مسیرهای درخواست‌ها
+import requestGroupRoutes from './routes/requestGroupRoutes'; // اضافه کردن مسیرهای گروه‌های درخواست
+import requestSubGroupRoutes from './routes/requestSubGroupRoutes'; // اضافه کردن مسیرهای زیرگروه‌های درخواست
 import { errorHandler, notFound } from './middleware/error';
 
 // ایجاد اپلیکیشن Express
@@ -49,6 +53,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/contacts', contactRoutes); // اضافه کردن مسیرهای طرف‌حساب‌ها
 app.use('/api/payments', paymentRoutes); // اضافه کردن مسیرهای پرداخت‌ها
+app.use('/api/request-types', requestTypeRoutes); // اضافه کردن مسیرهای انواع درخواست‌ها
+app.use('/api/requests', requestRoutes); // اضافه کردن مسیرهای درخواست‌ها
+app.use('/api/request-groups', requestGroupRoutes); // اضافه کردن مسیرهای گروه‌های درخواست
+app.use('/api/request-sub-groups', requestSubGroupRoutes); // اضافه کردن مسیرهای زیرگروه‌های درخواست
 
 // صفحه اصلی API
 app.get('/api', (req: Request, res: Response) => {

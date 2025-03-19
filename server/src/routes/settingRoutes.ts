@@ -3,7 +3,9 @@
 
 import express from 'express';
 import { getSmsSettings, updateSmsSettings, sendTestSms, getSmsDeliveryStatus } from '../controllers/settingController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate } from '../middleware/authMiddleware';
+import { authorize } from '../middleware/roleMiddleware';
+import { requireUser } from '../middleware/requireUser';
 
 const router = express.Router();
 

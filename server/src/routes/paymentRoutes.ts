@@ -13,7 +13,9 @@ import {
   getPaymentImages,
   sendPaymentNotification,
 } from '../controllers/paymentController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate } from '../middleware/authMiddleware';
+import { authorize } from '../middleware/roleMiddleware';
+import { requireUser } from '../middleware/requireUser';
 import { validate } from '../middleware/validator';
 import { createPaymentSchema, updatePaymentSchema } from '../validators/paymentValidator';
 import { uploadPaymentImage as uploadMiddleware, handleUploadError } from '../middleware/upload';

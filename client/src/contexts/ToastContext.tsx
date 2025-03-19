@@ -1,30 +1,62 @@
 // client/src/contexts/ToastContext.tsx
-// کانتکست مدیریت پیام‌های اطلاع‌رسانی (Toast)
+// کانتکست مدیریت توست‌ها
 
-import React, { createContext, useContext } from 'react';
-import { Alert, Snackbar } from '@mui/material';
-import { useToast as useToastHook } from '../hooks/useToast';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { Snackbar, Alert, AlertColor } from '@mui/material';
 
-interface ToastContextType {
-  showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
-  hideToast: () => void;
+interface ToastContextProps {
+  showToast: (message: string, severity?: AlertColor) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+interface ToastProviderProps {
+  children: ReactNode;
+}
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { toast, showToast, hideToast } = useToastHook();
+interface ToastState {
+  open: boolean;
+  message: string;
+  severity: AlertColor;
+}
+
+const ToastContext = createContext<ToastContextProps | undefined>(undefined);
+
+export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+  const [toast, setToast] = useState<ToastState>({
+    open: false,
+    message: '',
+    severity: 'info',
+  });
+
+  const showToast = useCallback((message: string, severity: AlertColor = 'info') => {
+    setToast({
+      open: true,
+      message,
+      severity,
+    });
+  }, []);
+
+  const handleClose = () => {
+    setToast((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
 
   return (
-    <ToastContext.Provider value={{ showToast, hideToast }}>
+    <ToastContext.Provider value={{ showToast }}>
       {children}
       <Snackbar
         open={toast.open}
         autoHideDuration={5000}
-        onClose={hideToast}
+        onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        <Alert onClose={hideToast} severity={toast.type} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleClose}
+          severity={toast.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
           {toast.message}
         </Alert>
       </Snackbar>
@@ -32,10 +64,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-export const useToast = (): ToastContextType => {
+export const useToast = (): ToastContextProps => {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast باید درون ToastProvider استفاده شود');
+    throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 }; 

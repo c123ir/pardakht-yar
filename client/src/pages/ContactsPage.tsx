@@ -499,9 +499,9 @@ const ContactsPage: React.FC = () => {
         <TablePagination
           component="div"
           count={totalItems}
-          page={filter.page - 1}
+          page={(filter.page || 1) - 1}
           onPageChange={handleChangePage}
-          rowsPerPage={filter.limit}
+          rowsPerPage={filter.limit || 10}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="تعداد در صفحه:"
           labelDisplayedRows={({ from, to, count }) =>

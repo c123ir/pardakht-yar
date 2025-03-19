@@ -125,10 +125,21 @@ export const usePayments = (): UsePaymentsReturn => {
   const updatePayment = async (id: number, data: UpdatePaymentDto): Promise<PaymentRequest> => {
     try {
       setLoading(true);
-      const updatedPayment = await paymentService.updatePayment(id, data);
-      return updatedPayment;
+      try {
+        const updatedPayment = await paymentService.updatePayment(id, data);
+        return updatedPayment;
+      } catch (err: any) {
+        console.error("خطا در به‌روزرسانی درخواست پرداخت:", err);
+        // ساخت پیام خطای بهتر
+        if (err.response?.status === 500) {
+          throw new Error("خطای سرور در به‌روزرسانی درخواست پرداخت. لطفاً از برقراری ارتباط با سرور اطمینان حاصل کنید.");
+        } else {
+          throw new Error(err.message || 'خطا در به‌روزرسانی درخواست پرداخت');
+        }
+      }
     } catch (err: any) {
-      throw new Error(err.message || 'خطا در به‌روزرسانی درخواست پرداخت');
+      console.error("خطا در تابع updatePayment:", err);
+      throw err;
     } finally {
       setLoading(false);
     }

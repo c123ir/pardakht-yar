@@ -8,36 +8,48 @@ datasource db {
 }
 
 model User {
-  id               Int              @id @default(autoincrement())
-  username         String           @unique
-  password         String
-  fullName         String
-  email            String?          @unique
-  phone            String?          @unique
-  role             Role             @default(ADMIN)
-  isActive         Boolean          @default(true)
-  lastLogin        DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  createdContacts  Contact[]        @relation("ContactCreatedBy")
-  groupMemberships GroupMember[]
-  createdGroups    PaymentGroup[]   @relation("GroupCreatedBy")
-  uploadedImages   PaymentImage[]   @relation("UploadedBy")
-  createdPayments  PaymentRequest[] @relation("CreatedBy")
-  paidPayments     PaymentRequest[] @relation("PaidBy")
-  updatedPayments  PaymentRequest[] @relation("UpdatedBy")
+  id                    Int                  @id @default(autoincrement())
+  username              String               @unique
+  password              String
+  fullName              String
+  email                 String?              @unique
+  phone                 String?              @unique
+  role                  Role                 @default(ADMIN)
+  isActive              Boolean              @default(true)
+  lastLogin             DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  
+  createdContacts       Contact[]            @relation("ContactCreatedBy")
+  groupMemberships      GroupMember[]
+  createdGroups         PaymentGroup[]       @relation("GroupCreatedBy")
+  uploadedImages        PaymentImage[]       @relation("UploadedBy")
+  createdPayments       PaymentRequest[]     @relation("CreatedBy")
+  paidPayments          PaymentRequest[]     @relation("PaidBy")
+  updatedPayments       PaymentRequest[]     @relation("UpdatedBy")
+  
+  createdRequestTypes   RequestType[]        @relation("RequestTypeCreatedBy")
+  createdRequests       Request[]            @relation("RequestCreatedBy")
+  assignedRequests      Request[]            @relation("RequestAssignedTo") 
+  uploadedAttachments   RequestAttachment[]  @relation("RequestAttachmentUploader")
+  requestActivities     RequestActivity[]    @relation("RequestActivityUser")
+  createdRequestGroups  RequestGroup[]       @relation("RequestGroupCreatedBy")
+  createdSubGroups      RequestSubGroup[]    @relation("SubGroupCreatedBy")
 }
 
 model PaymentGroup {
   id              Int              @id @default(autoincrement())
   title           String
   description     String?
+  color           String?
   creatorId       Int
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  members         GroupMember[]
   createdBy       User             @relation("GroupCreatedBy", fields: [creatorId], references: [id])
+  members         GroupMember[]
   paymentRequests PaymentRequest[]
+
+  @@map("payment_groups")
 }
 
 model GroupMember {
@@ -52,23 +64,28 @@ model GroupMember {
 }
 
 model Contact {
-  id               Int                     @id @default(autoincrement())
-  companyName      String
-  ceoName          String?
-  fieldOfActivity  String?
-  accountantName   String?
-  accountantPhone  String?
-  email            String?
-  address          String?
-  bankInfo         Json?
-  notes            String?
-  accessToken      String?                 @unique
-  creatorId        Int
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
-  createdBy        User                    @relation("ContactCreatedBy", fields: [creatorId], references: [id])
-  portalActivities ContactPortalActivity[]
-  paymentRequests  PaymentRequest[]
+  id             Int                    @id @default(autoincrement())
+  companyName    String
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  nationalId     String?
+  economicCode   String?
+  description    String?
+  bankInfo       Json?
+  accessToken    String?                @unique
+  ceoName        String?
+  accountantName String?
+  accountantPhone String?
+  fieldOfActivity String?
+  creatorId      Int
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  createdBy      User                   @relation("ContactCreatedBy", fields: [creatorId], references: [id])
+  activities     ContactPortalActivity[]
+  paymentRequests PaymentRequest[]
+  requests       Request[]              @relation("ContactRequests")
 }
 
 model PaymentRequest {
@@ -168,4 +185,114 @@ enum PaymentStatus {
   APPROVED
   PAID
   REJECTED
+}
+
+model RequestType {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  fieldConfig Json
+  createdBy   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  creator     User      @relation("RequestTypeCreatedBy", fields: [createdBy], references: [id])
+  requests    Request[]
+  groups      RequestGroup[]
+
+  @@map("request_types")
+}
+
+model RequestGroup {
+  id          Int              @id @default(autoincrement())
+  name        String
+  description String?
+  requestTypeId Int
+  isActive    Boolean          @default(true)
+  createdBy   Int
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  requestType RequestType      @relation(fields: [requestTypeId], references: [id])
+  creator     User             @relation("RequestGroupCreatedBy", fields: [createdBy], references: [id])
+  subGroups   RequestSubGroup[]
+  requests    Request[]        @relation("GroupRequests")
+
+  @@map("request_groups")
+}
+
+model RequestSubGroup {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  groupId     Int
+  isActive    Boolean      @default(true)
+  createdBy   Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  group       RequestGroup @relation(fields: [groupId], references: [id])
+  creator     User         @relation("SubGroupCreatedBy", fields: [createdBy], references: [id])
+  requests    Request[]    @relation("SubGroupRequests")
+
+  @@map("request_sub_groups")
+}
+
+model Request {
+  id                Int                 @id @default(autoincrement())
+  requestTypeId     Int
+  title             String
+  description       String?
+  amount            Float?
+  effectiveDate     DateTime?
+  beneficiaryName   String?
+  beneficiaryPhone  String?
+  contactId         Int?
+  groupId           Int?
+  subGroupId        Int?
+  status            String              @default("PENDING")
+  creatorId         Int
+  assigneeId        Int?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  requestType       RequestType         @relation(fields: [requestTypeId], references: [id])
+  creator           User                @relation("RequestCreatedBy", fields: [creatorId], references: [id])
+  assignee          User?               @relation("RequestAssignedTo", fields: [assigneeId], references: [id])
+  contact           Contact?            @relation("ContactRequests", fields: [contactId], references: [id])
+  group             RequestGroup?       @relation("GroupRequests", fields: [groupId], references: [id])
+  subGroup          RequestSubGroup?    @relation("SubGroupRequests", fields: [subGroupId], references: [id])
+  attachments       RequestAttachment[]
+  activities        RequestActivity[]
+
+  @@map("requests")
+}
+
+model RequestAttachment {
+  id              Int       @id @default(autoincrement())
+  requestId       Int
+  filePath        String
+  fileType        String
+  fileName        String
+  uploadedBy      Int
+  uploadedAt      DateTime  @default(now())
+  
+  request         Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploader        User      @relation("RequestAttachmentUploader", fields: [uploadedBy], references: [id])
+
+  @@map("request_attachments")
+}
+
+model RequestActivity {
+  id        Int       @id @default(autoincrement())
+  requestId Int
+  userId    Int
+  action    String
+  details   Json?
+  createdAt DateTime  @default(now())
+  
+  request   Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      User      @relation("RequestActivityUser", fields: [userId], references: [id])
+
+  @@map("request_activities")
 }

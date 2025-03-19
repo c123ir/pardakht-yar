@@ -31,14 +31,16 @@ export const useContacts = (): UseContactsReturn => {
       
       try {
         const response: PaginatedContactsResponse = await contactService.getContacts(filters);
-        setContacts(response.data);
-        setTotalItems(response.pagination.totalItems);
+        setContacts(response.data || []);
+        setTotalItems(response.pagination?.totalItems || 0);
+        console.log("طرف‌حساب‌ها دریافت شدند:", response.data?.length || 0, "آیتم");
       } catch (err: any) {
         console.error("خطا در دریافت لیست طرف‌حساب‌ها:", err);
         // در صورت خطا آرایه خالی را نمایش می‌دهیم
         setContacts([]);
         setTotalItems(0);
         setError(err.message || 'خطا در دریافت لیست طرف‌حساب‌ها');
+        // در اینجا خطا را throw نمی‌کنیم تا همچنان UI کار کند
       }
     } catch (err: any) {
       console.error("خطا در تابع loadContacts:", err);

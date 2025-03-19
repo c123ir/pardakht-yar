@@ -4,6 +4,8 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { getAuthToken, getUserData, removeAuthToken, removeUserData } from '../utils/auth';
+import axios from 'axios';
 
 // تایپ‌های مورد نیاز
 interface User {
@@ -42,19 +44,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // بررسی اعتبار توکن هنگام بارگذاری
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
+      // بررسی وجود توکن در localStorage
+      const token = getAuthToken();
+      console.log('Initial token check:', token);
       
       if (!token) {
         setIsLoading(false);
         return;
       }
       
+      // تنظیم هدر پیش‌فرض برای axios
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // ابتدا از داده‌های محلی استفاده می‌کنیم
+      const localUserData = getUserData();
+      if (localUserData) {
+        setUser(localUserData);
+      }
+      
+      // سپس از سرور برای تایید اطلاعات استفاده می‌کنیم
       try {
         const userData = await authService.getCurrentUser();
         setUser(userData);
       } catch (err) {
         console.error('خطا در دریافت اطلاعات کاربر:', err);
-        localStorage.removeItem('token');
+        // حذف داده‌های کاربر در صورت خطا
+        removeAuthToken();
+        removeUserData();
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -69,15 +86,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const { user: userData, token } = await authService.login(username, password);
-      
-      // ذخیره توکن در localStorage
-      localStorage.setItem('token', token);
+      const { user: userData } = await authService.login(username, password);
       
       setUser(userData);
       navigate('/dashboard');
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'خطا در ورود به سیستم';
+      const errorMessage = err.message || 'خطا در ورود به سیستم';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -87,7 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // تابع خروج
   const logout = () => {
-    localStorage.removeItem('token');
+    // پاک کردن Authorization هدر
+    delete axios.defaults.headers.common['Authorization'];
+    
+    // پاک کردن داده‌های localStorage
+    removeAuthToken();
+    removeUserData();
+    
     setUser(null);
     navigate('/login');
   };

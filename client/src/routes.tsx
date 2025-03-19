@@ -12,12 +12,17 @@ import GroupsPage from './pages/GroupsPage';
 import ContactsPage from './pages/ContactsPage';
 import UsersPage from './pages/UsersPage';
 import SmsSettingsPage from './pages/SmsSettingsPage';
+import RequestTypesPage from './pages/RequestTypesPage';
+import RequestGroupsPage from './pages/RequestGroupsPage';
+import RequestSubGroupsPage from './pages/RequestSubGroupsPage';
 import Layout from './components/layout/Layout';
 import { useAuth } from './hooks/useAuth';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const isFinancialManager = user?.role === 'FINANCIAL_MANAGER';
+  const isAdminOrFinancial = isAdmin || isFinancialManager;
 
   return (
     <Routes>
@@ -42,6 +47,11 @@ const AppRoutes: React.FC = () => {
         
         <Route path="groups" element={<GroupsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
+        
+        {/* مسیرهای سیستم درخواست‌های داینامیک */}
+        <Route path="request-types" element={isAdminOrFinancial ? <RequestTypesPage /> : <Navigate to="/dashboard" />} />
+        <Route path="request-groups" element={isAdminOrFinancial ? <RequestGroupsPage /> : <Navigate to="/dashboard" />} />
+        <Route path="request-groups/:groupId/subgroups" element={isAdminOrFinancial ? <RequestSubGroupsPage /> : <Navigate to="/dashboard" />} />
         
         {/* مسیرهای مدیریتی - فقط برای ادمین */}
         <Route path="users" element={isAdmin ? <UsersPage /> : <Navigate to="/dashboard" />} />

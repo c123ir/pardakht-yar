@@ -33,7 +33,7 @@ export const formatAmountWithCommas = (amount: number | string): string => {
   let amountStr = typeof amount === 'string' ? amount : amount.toString();
   amountStr = amountStr.replace(/,/g, '');
   
-  // تبدیل اعداد فارسی به انگلیسی
+  // تبدیل اعداد فارسی به انگلیسی طبق مستندات @05-DIGIT_CONVERSION.md
   amountStr = convertPersianToEnglishNumbers(amountStr);
   
   // حذف کاراکترهای غیر عددی (بجز منفی در ابتدا)
@@ -44,6 +44,12 @@ export const formatAmountWithCommas = (amount: number | string): string => {
     amountStr = amountStr.replace(/-/g, '');
   }
   
+  // بررسی اعداد خالی
+  if (!amountStr) return '';
+  
   // اضافه کردن کاما هر 3 رقم
-  return amountStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const formattedAmount = Number(amountStr).toLocaleString('fa-IR');
+  
+  // تبدیل مجدد اعداد فارسی به انگلیسی (برای اطمینان)
+  return convertPersianToEnglishNumbers(formattedAmount);
 }; 

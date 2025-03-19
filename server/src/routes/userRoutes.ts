@@ -3,7 +3,9 @@
 
 import express from 'express';
 import { getUsers, getUserById, createUser, updateUser, deleteUser } from '../controllers/userController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate } from '../middleware/authMiddleware';
+import { authorize } from '../middleware/roleMiddleware';
+import { requireUser } from '../middleware/requireUser';
 
 const router = express.Router();
 

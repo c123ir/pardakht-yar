@@ -3,7 +3,7 @@
 
 import express from 'express';
 import { login, getCurrentUser } from '../controllers/authController';
-import { authenticate } from '../middleware/auth';
+import { authenticate } from '../middleware/authMiddleware';
 
 const router = express.Router();
 

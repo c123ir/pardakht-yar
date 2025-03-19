@@ -21,6 +21,8 @@ import GroupIcon from '@mui/icons-material/Group';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import PeopleIcon from '@mui/icons-material/People';
 import SmsIcon from '@mui/icons-material/Sms';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import FolderIcon from '@mui/icons-material/Folder';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -63,6 +65,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
   const location = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const isFinancialManager = user?.role === 'FINANCIAL_MANAGER';
+  const isAdminOrFinancial = isAdmin || isFinancialManager;
   
   // آیتم‌های منوی اصلی
   const mainMenuItems = [
@@ -70,6 +74,12 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
     { text: 'پرداخت‌ها', icon: <PaymentIcon />, path: '/payments' },
     { text: 'گروه‌ها', icon: <GroupIcon />, path: '/groups' },
     { text: 'طرف‌حساب‌ها', icon: <ContactsIcon />, path: '/contacts' },
+  ];
+
+  // آیتم‌های منوی سیستم درخواست‌ها - برای ادمین و مدیر مالی
+  const requestMenuItems = [
+    { text: 'انواع درخواست‌ها', icon: <ListAltIcon />, path: '/request-types' },
+    { text: 'گروه‌های درخواست', icon: <FolderIcon />, path: '/request-groups' },
   ];
 
   // آیتم‌های منوی مدیریت - فقط برای ادمین
@@ -107,6 +117,35 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
             </ListItemButton>
           </ListItem>
         ))}
+        
+        {/* منوی سیستم درخواست‌ها - برای ادمین و مدیر مالی */}
+        {isAdminOrFinancial && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <ListItem>
+              <ListItemText 
+                primary="سیستم درخواست‌ها" 
+                primaryTypographyProps={{ 
+                  variant: 'caption', 
+                  color: 'text.secondary' 
+                }} 
+              />
+            </ListItem>
+            
+            {requestMenuItems.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={location.pathname === item.path}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </>
+        )}
         
         {/* منوی مدیریت - فقط برای ادمین */}
         {isAdmin && (

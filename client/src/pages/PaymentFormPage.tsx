@@ -144,6 +144,7 @@ const PaymentFormPage: React.FC = () => {
 
   // مدیریت انتخاب طرف‌حساب
   const handleContactChange = (contact: Contact | null) => {
+    console.log("طرف‌حساب انتخاب شد:", contact);
     setSelectedContact(contact);
     
     // محافظت در برابر خطای داده‌های ناقص
@@ -151,11 +152,11 @@ const PaymentFormPage: React.FC = () => {
       setFormData(prev => ({ 
         ...prev, 
         contactId: contact.id.toString(),
-        beneficiaryName: !manualBeneficiary ? (contact.contactPerson || '') : prev.beneficiaryName,
-        beneficiaryPhone: !manualBeneficiary ? (contact.phone || '') : prev.beneficiaryPhone,
+        beneficiaryName: !manualBeneficiary ? (contact.contactPerson || contact.accountantName || '') : prev.beneficiaryName,
+        beneficiaryPhone: !manualBeneficiary ? (contact.phone || contact.accountantPhone || '') : prev.beneficiaryPhone,
       }));
       // وقتی مخاطب انتخاب می‌شود، لاگ ثبت می‌کنیم
-      console.log("مخاطب انتخاب شد:", contact);
+      console.log("مخاطب با موفقیت انتخاب شد:", contact);
     } else {
       setFormData(prev => ({ 
         ...prev, 

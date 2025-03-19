@@ -10,7 +10,9 @@ import {
   deleteContact,
   regenerateAccessToken 
 } from '../controllers/contactController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate } from '../middleware/authMiddleware';
+import { authorize } from '../middleware/roleMiddleware';
+import { requireUser } from '../middleware/requireUser';
 import { validate } from '../middleware/validator';
 import { contactSchema } from '../validators/contactValidator';
 

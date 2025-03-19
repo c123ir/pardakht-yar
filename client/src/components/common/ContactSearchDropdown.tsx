@@ -63,16 +63,23 @@ const ContactSearchDropdown: React.FC<ContactSearchDropdownProps> = ({
 
   // مدیریت انتخاب طرف‌حساب
   const handleChange = (_: React.SyntheticEvent, newValue: Contact | null) => {
+    console.log("مخاطب انتخاب شد:", newValue);
     onChange(newValue);
   };
 
   // نمایش آیتم در لیست
   const renderOption = (props: React.HTMLAttributes<HTMLLIElement>, option: Contact) => {
-    // استخراج key از props و حذف آن
-    const { key, ...otherProps } = props;
-    
+    // بجای استخراج key، از otherProps استفاده می‌کنیم
     return (
-      <li key={option.id} {...otherProps}>
+      <li key={option.id} {...props} onClick={() => {
+        // استفاده از React.MouseEvent به جای MouseEvent عادی
+        if (props.onClick) {
+          const syntheticEvent = props.onClick as React.MouseEventHandler<HTMLLIElement>;
+          syntheticEvent({} as React.MouseEvent<HTMLLIElement>);
+        }
+        // وقتی روی یک گزینه کلیک می‌شود، مستقیماً آن را به عنوان انتخاب شده تنظیم می‌کنیم
+        handleChange({} as React.SyntheticEvent, option);
+      }}>
         <Box display="flex" alignItems="center" width="100%">
           <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: 'primary.main' }}>
             <BusinessIcon fontSize="small" />

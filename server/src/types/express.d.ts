@@ -1,14 +1,19 @@
 // server/src/types/express.d.ts
-// تایپ‌های اختصاصی Express
+// تعریف تایپ‌های سفارشی برای اکسپرس
 
 import { Role } from '@prisma/client';
 
-declare namespace Express {
-  interface Request {
-    user?: {
+declare global {
+  namespace Express {
+    interface User {
       id: number;
       username: string;
-      role: string | Role;
-    };
+      fullName: string;
+      role: Role;
+    }
+
+    interface Request {
+      user: User;
+    }
   }
 }

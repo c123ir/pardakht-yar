@@ -67,9 +67,21 @@ const deleteContact = async (id: number) => {
 // تولید توکن دسترسی
 const generateContactToken = async (id: number) => {
   try {
-    const response = await api.post(`/contacts/${id}/generate-token`);
+    // بررسی آدرس API با مستندات - فرض صحیح: regenerate-token
+    const response = await api.post(`/contacts/${id}/regenerate-token`);
     return response.data.data;
   } catch (error: any) {
+    // در صورت خطای 404، امتحان آدرس جایگزین
+    if (error.response?.status === 404) {
+      try {
+        const response = await api.post(`/contacts/${id}/generate-token`);
+        return response.data.data;
+      } catch (secondError: any) {
+        throw new Error(
+          secondError.response?.data?.message || 'خطا در تولید توکن دسترسی'
+        );
+      }
+    }
     throw new Error(
       error.response?.data?.message || 'خطا در تولید توکن دسترسی'
     );
