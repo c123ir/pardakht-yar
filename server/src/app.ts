@@ -13,6 +13,7 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import settingRoutes from './routes/settingRoutes';
 import contactRoutes from './routes/contactRoutes'; // اضافه کردن مسیرهای طرف‌حساب‌ها
+import paymentRoutes from './routes/paymentRoutes'; // اضافه کردن مسیرهای پرداخت‌ها
 import { errorHandler, notFound } from './middleware/error';
 
 // ایجاد اپلیکیشن Express
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/contacts', contactRoutes); // اضافه کردن مسیرهای طرف‌حساب‌ها
+app.use('/api/payments', paymentRoutes); // اضافه کردن مسیرهای پرداخت‌ها
 
 // صفحه اصلی API
 app.get('/api', (req: Request, res: Response) => {

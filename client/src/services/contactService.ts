@@ -2,19 +2,10 @@
 // سرویس مدیریت طرف‌حساب‌ها
 
 import api from './api';
-import { Contact } from '../types/contact.types';
-
-// تایپ پارامترهای جستجو
-interface ContactSearchParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+import { Contact, ContactFilter } from '../types/contact.types';
 
 // دریافت لیست طرف‌حساب‌ها
-const getContacts = async (params: ContactSearchParams = {}) => {
+const getContacts = async (params: ContactFilter = { page: 1, limit: 10 }) => {
   try {
     const response = await api.get('/contacts', { params });
     return response.data;
@@ -73,14 +64,14 @@ const deleteContact = async (id: number) => {
   }
 };
 
-// بازتولید توکن دسترسی
-const regenerateAccessToken = async (id: number) => {
+// تولید توکن دسترسی
+const generateContactToken = async (id: number) => {
   try {
-    const response = await api.post(`/contacts/${id}/regenerate-token`);
+    const response = await api.post(`/contacts/${id}/generate-token`);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || 'خطا در بازتولید توکن دسترسی'
+      error.response?.data?.message || 'خطا در تولید توکن دسترسی'
     );
   }
 };
@@ -91,5 +82,5 @@ export default {
   createContact,
   updateContact,
   deleteContact,
-  regenerateAccessToken,
+  generateContactToken,
 };

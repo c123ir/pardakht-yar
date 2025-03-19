@@ -28,9 +28,9 @@ import {
   FilterAlt as FilterOnIcon,
   CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
-import { PaymentStatus } from '../../types/payment.types';
 import { useGroups } from '../../hooks/useGroups';
 import { useContacts } from '../../hooks/useContacts';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 interface PaymentFilterValues {
   status: string;
@@ -70,7 +70,7 @@ const PaymentFilterDialog: React.FC<PaymentFilterDialogProps> = ({
   }, [open, initialValues]);
 
   // تغییر مقادیر فیلترها
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>) => {
     const { name, value } = e.target;
     if (name) {
       setFilterValues(prev => ({

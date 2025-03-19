@@ -40,7 +40,7 @@ import {
 import { usePayments } from '../hooks/usePayments';
 import { useToast } from '../contexts/ToastContext';
 import { formatDateTime, formatDate } from '../utils/dateUtils';
-import { PaymentImage, PaymentRequest, PaymentStatus } from '../types/payment.types';
+import { PaymentImage, PaymentRequest } from '../types/payment.types';
 
 const PaymentImagesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

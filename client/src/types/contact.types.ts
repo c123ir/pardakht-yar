@@ -25,6 +25,11 @@ export interface Contact {
   notes?: string;
   accessToken?: string;
   creatorId: number;
+  // فیلدهای اضافه شده
+  ceoName?: string;
+  fieldOfActivity?: string;
+  accountantName?: string;
+  accountantPhone?: string;
   // روابط
   createdBy?: {
     fullName: string;
@@ -40,8 +45,8 @@ export interface Contact {
 
 export interface ContactFilter {
   search?: string;
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }

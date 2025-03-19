@@ -2,7 +2,7 @@
 // توابع کمکی برای کار با تاریخ شمسی
 
 import { format, parse, isValid } from 'date-fns-jalali';
-import { addHours, isSameDay, isSameYear } from 'date-fns';
+import { addHours, isSameDay } from 'date-fns';
 
 /**
  * تبدیل تاریخ میلادی به شمسی
@@ -68,7 +68,7 @@ export const formatDateToISO = (date: string | Date): string => {
   }
   
   // در صورت خطا، تاریخ اصلی را برگردان
-  return typeof date === 'string' ? date : date.toString();
+  return String(date);
 };
 
 /**

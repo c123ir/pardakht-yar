@@ -11,43 +11,47 @@ import {
   Grid,
   TextField,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   InputAdornment,
   CircularProgress,
   Divider,
   Paper,
   Alert,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Stack,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
-  Group as GroupIcon,
-  Business as BusinessIcon,
-  PermContactCalendar as ContactIcon,
   AttachMoney as MoneyIcon,
-  CalendarToday as CalendarIcon,
+  Phone as PhoneIcon,
+  Person as PersonIcon,
+  KeyboardReturn as ReturnIcon,
 } from '@mui/icons-material';
 import { usePayments } from '../hooks/usePayments';
-import { useGroups } from '../hooks/useGroups';
 import { useContacts } from '../hooks/useContacts';
 import { useToast } from '../contexts/ToastContext';
-import { convertPersianToEnglishNumbers } from '../utils/stringUtils';
+import { convertPersianToEnglishNumbers, formatAmountWithCommas } from '../utils/stringUtils';
 import { formatDateToISO } from '../utils/dateUtils';
-import { PaymentRequest } from '../types/payment.types';
+import { SelectChangeEvent } from '@mui/material/Select';
+import JalaliDatePicker from '../components/common/JalaliDatePicker';
+import ContactSearchDropdown from '../components/common/ContactSearchDropdown';
+import { Contact } from '../types/contact.types';
 
 const PaymentFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { getPaymentById, createPayment, updatePayment } = usePayments();
-  const { groups, loading: groupsLoading } = useGroups();
-  const { contacts, loading: contactsLoading } = useContacts();
+  const { loading: contactsLoading } = useContacts();
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [isEditMode] = useState<boolean>(!!id);
-  const [paymentData, setPaymentData] = useState<PaymentRequest | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,13 +61,15 @@ const PaymentFormPage: React.FC = () => {
     amount: '',
     effectiveDate: '',
     description: '',
-    groupId: '',
     contactId: '',
     beneficiaryName: '',
     beneficiaryPhone: '',
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [useContact, setUseContact] = useState<boolean>(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [manualBeneficiary, setManualBeneficiary] = useState<boolean>(false);
 
   // بارگذاری اطلاعات برای حالت ویرایش
   useEffect(() => {
@@ -73,7 +79,6 @@ const PaymentFormPage: React.FC = () => {
           setLoading(true);
           const paymentId = parseInt(id);
           const payment = await getPaymentById(paymentId);
-          setPaymentData(payment);
 
           // تنظیم فرم با داده‌های پرداخت
           setFormData({
@@ -81,11 +86,21 @@ const PaymentFormPage: React.FC = () => {
             amount: payment.amount.toString(),
             effectiveDate: payment.effectiveDate.substring(0, 10), // فقط تاریخ، بدون زمان
             description: payment.description || '',
-            groupId: payment.groupId?.toString() || '',
             contactId: payment.contactId?.toString() || '',
             beneficiaryName: payment.beneficiaryName || '',
             beneficiaryPhone: payment.beneficiaryPhone || '',
           });
+
+          // اگر طرف‌حساب داشت
+          if (payment.contactId) {
+            setUseContact(true);
+            setSelectedContact(payment.contact || null);
+          }
+
+          // اگر اطلاعات ذینفع دستی وارد شده بود
+          if (payment.beneficiaryName || payment.beneficiaryPhone) {
+            setManualBeneficiary(true);
+          }
         } catch (err: any) {
           setError(err.message || 'خطا در دریافت اطلاعات پرداخت');
           showToast(err.message || 'خطا در دریافت اطلاعات پرداخت', 'error');
@@ -99,26 +114,79 @@ const PaymentFormPage: React.FC = () => {
   }, [id, getPaymentById, showToast]);
 
   // مدیریت تغییرات فرم
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>) => {
     const { name, value } = e.target;
-
-    // اعتبارسنجی مقادیر
-    validateField(name as string, value as string);
-
-    if (name === 'amount' || name === 'beneficiaryPhone') {
-      // تبدیل اعداد فارسی به انگلیسی
-      const englishValue = convertPersianToEnglishNumbers(value as string);
+    
+    if (name) {
+      // پاکسازی خطاهای مربوط به فیلد
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
       
-      // فقط اعداد برای مبلغ
-      if (name === 'amount') {
-        const numericValue = englishValue.replace(/\D/g, '');
-        setFormData(prev => ({ ...prev, [name]: numericValue }));
+      // اعمال مقدار جدید
+      if (name === 'amount' && typeof value === 'string') {
+        // تبدیل اعداد فارسی به انگلیسی و فرمت کردن با کاما
+        const processedValue = formatAmountWithCommas(convertPersianToEnglishNumbers(value));
+        setFormData(prev => ({ ...prev, [name]: processedValue }));
+      } else if (name === 'beneficiaryPhone' && typeof value === 'string') {
+        // تبدیل اعداد فارسی به انگلیسی برای شماره موبایل
+        const processedValue = convertPersianToEnglishNumbers(value);
+        setFormData(prev => ({ ...prev, [name]: processedValue }));
       } else {
-        setFormData(prev => ({ ...prev, [name]: englishValue }));
+        setFormData(prev => ({ ...prev, [name]: value as string }));
       }
-    } else {
-      setFormData(prev => ({ ...prev, [name as string]: value as string }));
     }
+  };
+
+  // مدیریت تغییر تاریخ
+  const handleDateChange = (date: string) => {
+    setFormData(prev => ({ ...prev, effectiveDate: date }));
+    setFormErrors(prev => ({ ...prev, effectiveDate: '' }));
+  };
+
+  // مدیریت انتخاب طرف‌حساب
+  const handleContactChange = (contact: Contact | null) => {
+    setSelectedContact(contact);
+    
+    // محافظت در برابر خطای داده‌های ناقص
+    if (contact && typeof contact === 'object' && 'id' in contact) {
+      setFormData(prev => ({ 
+        ...prev, 
+        contactId: contact.id.toString(),
+        beneficiaryName: !manualBeneficiary ? (contact.contactPerson || '') : prev.beneficiaryName,
+        beneficiaryPhone: !manualBeneficiary ? (contact.phone || '') : prev.beneficiaryPhone,
+      }));
+      // وقتی مخاطب انتخاب می‌شود، لاگ ثبت می‌کنیم
+      console.log("مخاطب انتخاب شد:", contact);
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        contactId: '',
+        // اگر اطلاعات دستی نیست، پاک کن
+        beneficiaryName: !manualBeneficiary ? '' : prev.beneficiaryName,
+        beneficiaryPhone: !manualBeneficiary ? '' : prev.beneficiaryPhone,
+      }));
+      
+      if (contact) {
+        // لاگ برای اشکال‌زدایی
+        console.warn("داده‌های مخاطب معتبر نیست:", contact);
+      }
+    }
+  };
+
+  // وضعیت استفاده از طرف‌حساب
+  const handleUseContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setUseContact(checked);
+    
+    if (!checked) {
+      // اگر طرف‌حساب غیرفعال شد، مقدار آن را پاک کن
+      setSelectedContact(null);
+      setFormData(prev => ({ ...prev, contactId: '' }));
+    }
+  };
+
+  // وضعیت ورود دستی اطلاعات ذینفع
+  const handleManualBeneficiaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setManualBeneficiary(e.target.checked);
   };
 
   // اعتبارسنجی یک فیلد
@@ -138,9 +206,10 @@ const PaymentFormPage: React.FC = () => {
         }
         break;
       case 'amount':
-        if (!value) {
+        const cleanAmount = value.toString().replace(/,/g, '');
+        if (!cleanAmount) {
           newErrors[name] = 'مبلغ الزامی است';
-        } else if (parseInt(value.toString()) <= 0) {
+        } else if (parseInt(cleanAmount) <= 0) {
           newErrors[name] = 'مبلغ باید بزرگتر از صفر باشد';
         }
         break;
@@ -150,7 +219,10 @@ const PaymentFormPage: React.FC = () => {
         }
         break;
       case 'beneficiaryPhone':
-        if (value && !/^09\d{9}$/.test(convertPersianToEnglishNumbers(value.toString()))) {
+        // تبدیل اعداد فارسی به انگلیسی
+        const englishPhone = convertPersianToEnglishNumbers(value.toString());
+        // اگر شماره وارد شده اما فرمت آن صحیح نیست
+        if (englishPhone && !/^(0|\+98)?9\d{9}$/.test(englishPhone)) {
           newErrors[name] = 'شماره موبایل نامعتبر است';
         }
         break;
@@ -187,40 +259,47 @@ const PaymentFormPage: React.FC = () => {
       return;
     }
 
-    // آماده‌سازی داده‌ها
-    const paymentFormData = {
-      title: formData.title,
-      amount: parseInt(formData.amount),
-      effectiveDate: formatDateToISO(formData.effectiveDate),
-      description: formData.description || undefined,
-      groupId: formData.groupId ? parseInt(formData.groupId) : null,
-      contactId: formData.contactId ? parseInt(formData.contactId) : null,
-      beneficiaryName: formData.beneficiaryName || undefined,
-      beneficiaryPhone: formData.beneficiaryPhone || undefined,
-    };
-
     try {
       setSaving(true);
-      if (isEditMode && id) {
-        // ویرایش پرداخت موجود
-        await updatePayment(parseInt(id), paymentFormData);
-        showToast('درخواست پرداخت با موفقیت به‌روزرسانی شد', 'success');
-      } else {
-        // ایجاد پرداخت جدید
-        await createPayment(paymentFormData);
-        showToast('درخواست پرداخت با موفقیت ایجاد شد', 'success');
+      
+      // آماده‌سازی داده‌ها
+      const paymentFormData = {
+        title: formData.title,
+        amount: parseInt(formData.amount.replace(/,/g, '')),
+        effectiveDate: formatDateToISO(formData.effectiveDate),
+        description: formData.description || undefined,
+        contactId: useContact && formData.contactId ? parseInt(formData.contactId) : null,
+        beneficiaryName: formData.beneficiaryName || undefined,
+        beneficiaryPhone: formData.beneficiaryPhone || undefined,
+      };
+
+      try {
+        if (isEditMode && id) {
+          // ویرایش پرداخت موجود
+          await updatePayment(parseInt(id), paymentFormData);
+          showToast('درخواست پرداخت با موفقیت به‌روزرسانی شد', 'success');
+        } else {
+          // ایجاد پرداخت جدید
+          await createPayment(paymentFormData);
+          showToast('درخواست پرداخت با موفقیت ایجاد شد', 'success');
+        }
+        navigate('/payments');
+      } catch (err: any) {
+        console.error("خطا در ذخیره پرداخت:", err);
+        setError(err.message || 'خطا در ثبت درخواست پرداخت');
+        showToast(err.message || 'خطا در ثبت درخواست پرداخت. لطفاً از اتصال به سرور اطمینان حاصل کنید.', 'error');
       }
-      navigate('/payments');
     } catch (err: any) {
-      setError(err.message || 'خطا در ثبت درخواست پرداخت');
-      showToast(err.message || 'خطا در ثبت درخواست پرداخت', 'error');
+      console.error("خطا در آماده‌سازی داده‌ها:", err);
+      setError('خطا در پردازش اطلاعات فرم');
+      showToast('خطا در پردازش اطلاعات فرم', 'error');
     } finally {
       setSaving(false);
     }
   };
 
   // نمایش بارگذاری
-  if (loading || groupsLoading || contactsLoading) {
+  if (loading || contactsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -229,13 +308,13 @@ const PaymentFormPage: React.FC = () => {
   }
 
   return (
-    <Box p={3}>
-      <Paper sx={{ p: 2, mb: 3 }}>
+    <Box p={isMobile ? 1 : 3}>
+      <Paper sx={{ p: isMobile ? 1 : 2, mb: 3 }}>
         <Box display="flex" alignItems="center" gap={1}>
           <IconButton onClick={() => navigate('/payments')}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h5">
+          <Typography variant={isMobile ? 'h6' : 'h5'}>
             {isEditMode ? 'ویرایش درخواست پرداخت' : 'ثبت درخواست پرداخت جدید'}
           </Typography>
         </Box>
@@ -248,12 +327,12 @@ const PaymentFormPage: React.FC = () => {
       )}
 
       <Card>
-        <CardContent>
+        <CardContent sx={{ p: isMobile ? 1 : 2 }}>
           <Box component="form" onSubmit={handleSubmit} noValidate>
-            <Grid container spacing={3}>
+            <Grid container spacing={isMobile ? 2 : 3}>
               {/* بخش عنوان و مبلغ */}
               <Grid item xs={12}>
-                <Divider textAlign="left" sx={{ mb: 2 }}>
+                <Divider textAlign="right" sx={{ mb: 2 }}>
                   <Typography variant="subtitle1" color="primary">
                     اطلاعات اصلی
                   </Typography>
@@ -275,7 +354,7 @@ const PaymentFormPage: React.FC = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <MoneyIcon />
+                        <MoneyIcon color="action" />
                       </InputAdornment>
                     ),
                   }}
@@ -293,11 +372,11 @@ const PaymentFormPage: React.FC = () => {
                   onChange={handleInputChange}
                   error={!!formErrors.amount}
                   helperText={formErrors.amount}
-                  placeholder="مثال: 5000000"
+                  placeholder="مثال: 5,000,000"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <MoneyIcon />
+                        <MoneyIcon color="action" />
                       </InputAdornment>
                     ),
                     endAdornment: (
@@ -308,172 +387,151 @@ const PaymentFormPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  required
-                  id="effectiveDate"
-                  name="effectiveDate"
-                  label="تاریخ پرداخت"
-                  type="date"
+                <JalaliDatePicker
                   value={formData.effectiveDate}
-                  onChange={handleInputChange}
+                  onChange={handleDateChange}
+                  label="تاریخ پرداخت"
                   error={!!formErrors.effectiveDate}
                   helperText={formErrors.effectiveDate}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
+                  required
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  id="description"
+                  name="description"
+                  label="توضیحات"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="توضیحات تکمیلی پرداخت..."
+                  multiline
+                  rows={2}
                   InputProps={{
                     startAdornment: (
-                      <InputAdornment position="start">
-                        <CalendarIcon />
+                      <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1 }}>
+                        <ReturnIcon color="action" />
                       </InputAdornment>
                     ),
                   }}
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="group-label">گروه پرداخت</InputLabel>
-                  <Select
-                    labelId="group-label"
-                    id="groupId"
-                    name="groupId"
-                    value={formData.groupId}
-                    onChange={handleInputChange}
-                    label="گروه پرداخت"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <GroupIcon />
-                      </InputAdornment>
-                    }
-                  >
-                    <MenuItem value="">
-                      <em>انتخاب نشده</em>
-                    </MenuItem>
-                    {groups?.map((group) => (
-                      <MenuItem key={group.id} value={group.id.toString()}>
-                        {group.title}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* بخش طرف حساب و ذینفع */}
+              {/* بخش اطلاعات ذینفع */}
               <Grid item xs={12}>
-                <Divider textAlign="left" sx={{ mt: 1, mb: 2 }}>
+                <Divider textAlign="right" sx={{ mt: 1, mb: 2 }}>
                   <Typography variant="subtitle1" color="primary">
                     اطلاعات ذینفع
                   </Typography>
                 </Divider>
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="contact-label">طرف حساب</InputLabel>
-                  <Select
-                    labelId="contact-label"
-                    id="contactId"
-                    name="contactId"
-                    value={formData.contactId}
-                    onChange={handleInputChange}
-                    label="طرف حساب"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <BusinessIcon />
-                      </InputAdornment>
-                    }
-                  >
-                    <MenuItem value="">
-                      <em>انتخاب نشده</em>
-                    </MenuItem>
-                    {contacts?.map((contact) => (
-                      <MenuItem key={contact.id} value={contact.id.toString()}>
-                        {contact.companyName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  id="beneficiaryName"
-                  name="beneficiaryName"
-                  label="نام ذینفع"
-                  value={formData.beneficiaryName}
-                  onChange={handleInputChange}
-                  placeholder="مثال: آقای محمد حسینی"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <ContactIcon />
-                      </InputAdornment>
-                    ),
-                  }}
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      checked={useContact} 
+                      onChange={handleUseContactChange}
+                      color="primary"
+                    />
+                  }
+                  label="ذینفع از طرف‌حساب‌ها انتخاب شود"
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  id="beneficiaryPhone"
-                  name="beneficiaryPhone"
-                  label="شماره موبایل ذینفع"
-                  value={formData.beneficiaryPhone}
-                  onChange={handleInputChange}
-                  error={!!formErrors.beneficiaryPhone}
-                  helperText={formErrors.beneficiaryPhone || 'برای ارسال پیامک پرداخت استفاده می‌شود'}
-                  placeholder="مثال: 09123456789"
+              {useContact && (
+                <Grid item xs={12}>
+                  <ContactSearchDropdown
+                    value={selectedContact}
+                    onChange={handleContactChange}
+                    fullWidth
+                    label="انتخاب طرف‌حساب"
+                    placeholder="جستجوی نام شرکت یا طرف‌حساب..."
+                  />
+                </Grid>
+              )}
+
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      checked={manualBeneficiary} 
+                      onChange={handleManualBeneficiaryChange}
+                      color="primary"
+                    />
+                  }
+                  label="اطلاعات ذینفع را به صورت دستی وارد می‌کنم"
                 />
               </Grid>
 
-              {/* بخش توضیحات */}
-              <Grid item xs={12}>
-                <Divider textAlign="left" sx={{ mt: 1, mb: 2 }}>
-                  <Typography variant="subtitle1" color="primary">
-                    توضیحات
-                  </Typography>
-                </Divider>
-              </Grid>
+              {manualBeneficiary && (
+                <>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      id="beneficiaryName"
+                      name="beneficiaryName"
+                      label="نام و نام‌خانوادگی ذینفع"
+                      value={formData.beneficiaryName}
+                      onChange={handleInputChange}
+                      placeholder="مثال: علی محمدی"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PersonIcon color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  id="description"
-                  name="description"
-                  label="توضیحات پرداخت"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  multiline
-                  rows={3}
-                  placeholder="توضیحات تکمیلی درباره این پرداخت..."
-                />
-              </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      id="beneficiaryPhone"
+                      name="beneficiaryPhone"
+                      label="شماره موبایل ذینفع"
+                      value={formData.beneficiaryPhone}
+                      onChange={handleInputChange}
+                      error={!!formErrors.beneficiaryPhone}
+                      helperText={formErrors.beneficiaryPhone}
+                      placeholder="مثال: 09123456789"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PhoneIcon color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                </>
+              )}
 
-              {/* دکمه‌های عملیات */}
+              {/* بخش دکمه‌ها */}
               <Grid item xs={12}>
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={() => navigate('/payments')}
-                    startIcon={<ArrowBackIcon />}
-                    disabled={saving}
-                  >
-                    انصراف
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-                    disabled={saving}
-                  >
-                    {isEditMode ? 'به‌روزرسانی' : 'ثبت درخواست'}
-                  </Button>
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Stack direction={isMobile ? 'column' : 'row'} spacing={2} width={isMobile ? '100%' : 'auto'}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => navigate('/payments')}
+                      startIcon={<ArrowBackIcon />}
+                      fullWidth={isMobile}
+                    >
+                      انصراف
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                      disabled={saving}
+                      fullWidth={isMobile}
+                    >
+                      {isEditMode ? 'به‌روزرسانی' : 'ذخیره'}
+                    </Button>
+                  </Stack>
                 </Box>
               </Grid>
             </Grid>

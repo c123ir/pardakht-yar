@@ -44,16 +44,25 @@ export const usePayments = (): UsePaymentsReturn => {
       setLoading(true);
       setError(null);
       
-      const response: PaginatedPaymentsResponse = await paymentService.getPayments(filters);
-      
-      setPayments(response.data);
-      setTotalItems(response.pagination.totalItems);
+      try {
+        const response: PaginatedPaymentsResponse = await paymentService.getPayments(filters);
+        setPayments(response.data);
+        setTotalItems(response.pagination.totalItems);
+      } catch (err: any) {
+        console.error("خطا در دریافت لیست پرداخت‌ها:", err);
+        // در صورت خطا آرایه خالی را نمایش می‌دهیم
+        setPayments([]);
+        setTotalItems(0);
+        setError(err.message || 'خطا در دریافت لیست پرداخت‌ها');
+      }
     } catch (err: any) {
-      setError(err.message || 'خطا در دریافت لیست پرداخت‌ها');
-      console.error(err);
+      console.error("خطا در تابع fetchPayments:", err);
+      setError(err.message || 'خطا در پردازش درخواست');
     } finally {
       setLoading(false);
     }
+  };
+
   /**
    * ارسال اطلاع‌رسانی پیامکی
    */
@@ -68,24 +77,6 @@ export const usePayments = (): UsePaymentsReturn => {
       setLoading(false);
     }
   };
-
-  return {
-    payments,
-    loading,
-    error,
-    totalItems,
-    fetchPayments,
-    getPaymentById,
-    createPayment,
-    updatePayment,
-    changePaymentStatus,
-    deletePayment,
-    uploadPaymentImage,
-    getPaymentImages,
-    deletePaymentImage,
-    sendPaymentNotification,
-  };
-};
 
   /**
    * دریافت اطلاعات یک پرداخت
@@ -108,10 +99,21 @@ export const usePayments = (): UsePaymentsReturn => {
   const createPayment = async (data: CreatePaymentDto): Promise<PaymentRequest> => {
     try {
       setLoading(true);
-      const newPayment = await paymentService.createPayment(data);
-      return newPayment;
+      try {
+        const newPayment = await paymentService.createPayment(data);
+        return newPayment;
+      } catch (err: any) {
+        console.error("خطا در ایجاد درخواست پرداخت:", err);
+        // ساخت پیام خطای بهتر
+        if (err.response?.status === 500) {
+          throw new Error("خطای سرور در ایجاد درخواست پرداخت. لطفاً از برقراری ارتباط با سرور اطمینان حاصل کنید.");
+        } else {
+          throw new Error(err.message || 'خطا در ایجاد درخواست پرداخت');
+        }
+      }
     } catch (err: any) {
-      throw new Error(err.message || 'خطا در ایجاد درخواست پرداخت');
+      console.error("خطا در تابع createPayment:", err);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -209,6 +211,7 @@ export const usePayments = (): UsePaymentsReturn => {
     payments,
     loading,
     error,
+    totalItems,
     fetchPayments,
     getPaymentById,
     createPayment,
@@ -217,6 +220,7 @@ export const usePayments = (): UsePaymentsReturn => {
     deletePayment,
     uploadPaymentImage,
     getPaymentImages,
-    deletePaymentImage
+    deletePaymentImage,
+    sendPaymentNotification
   };  
 };  

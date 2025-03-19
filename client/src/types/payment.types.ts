@@ -3,7 +3,6 @@
 
 import { Contact } from './contact.types';
 import { Group } from './group.types';
-import { User } from './user.types';
 
 export type PaymentStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED';
 

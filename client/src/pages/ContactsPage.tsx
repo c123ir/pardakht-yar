@@ -333,25 +333,24 @@ const ContactsPage: React.FC = () => {
     setOpenTokenDialog(true);
   };
   
-  // بازتولید توکن دسترسی
-  const handleRegenerateToken = async () => {
-    if (selectedContact) {
-      try {
-        setRegeneratingToken(true);
-        const result = await contactService.regenerateAccessToken(selectedContact.id);
-        setSelectedContact(prevState => {
-          if (!prevState) return null;
-          return {
-            ...prevState,
-            accessToken: result.accessToken,
-          };
-        });
-        showToast('توکن دسترسی با موفقیت بازتولید شد', 'success');
-      } catch (error: any) {
-        showToast(error.message, 'error');
-      } finally {
-        setRegeneratingToken(false);
-      }
+  // تولید مجدد توکن دسترسی
+  const handleRegenerateToken = async (id: number) => {
+    try {
+      setRegeneratingToken(true);
+      
+      const newToken = await contactService.generateContactToken(id);
+      
+      // به‌روزرسانی لیست طرف‌حساب‌ها برای نمایش توکن جدید
+      fetchContacts();
+      
+      // کپی کردن توکن در کلیپ‌بورد
+      navigator.clipboard.writeText(newToken);
+      
+      showToast('توکن جدید با موفقیت تولید و در کلیپ‌بورد کپی شد', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'خطا در تولید توکن جدید', 'error');
+    } finally {
+      setRegeneratingToken(false);
     }
   };
   
@@ -1010,7 +1009,7 @@ const ContactsPage: React.FC = () => {
       <Button
         variant="outlined"
         color="warning"
-        onClick={handleRegenerateToken}
+        onClick={() => handleRegenerateToken(selectedContact?.id || 0)}
         disabled={regeneratingToken}
         startIcon={regeneratingToken ? <CircularProgress size={16} /> : <RefreshIcon />}
       >

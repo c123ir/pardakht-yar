@@ -24,7 +24,6 @@ import {
   Chip,
   Tooltip,
   CircularProgress,
-  Divider,
   Alert,
   Stack,
   Badge,
@@ -46,8 +45,8 @@ import { useToast } from '../contexts/ToastContext';
 import PaymentStatusChip from '../components/payments/PaymentStatusChip';
 import PaymentFilterDialog from '../components/payments/PaymentFilterDialog';
 import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
-import { formatDate, formatDateTime } from '../utils/dateUtils';
-import { PaymentRequest, PaymentStatus, PaymentFilter } from '../types/payment.types';
+import { formatDate } from '../utils/dateUtils';
+import { PaymentStatus, PaymentFilter } from '../types/payment.types';
 /**
  * صفحه نمایش و مدیریت پرداخت‌ها با قابلیت فیلتر، جستجو و عملیات مدیریتی
  */
@@ -64,7 +63,6 @@ const PaymentsPage: React.FC = () => {
     fetchPayments,
     deletePayment,
     sendPaymentNotification,
-    changePaymentStatus,
   } = usePayments();
 
   // استیت‌های مدیریت نمایش
@@ -137,9 +135,16 @@ const PaymentsPage: React.FC = () => {
         ...(filters.endDate && { endDate: filters.endDate }),
       };
       
-      await fetchPayments(apiFilter);
+      try {
+        await fetchPayments(apiFilter);
+      } catch (err: any) {
+        // در صورت خطا، داده‌های خالی را نمایش می‌دهیم
+        console.error("خطا در بارگیری پرداخت‌ها:", err);
+        showToast('خطا در ارتباط با سرور. ممکن است سرور در دسترس نباشد.', 'error');
+      }
     } catch (err: any) {
-      showToast(err.message || 'خطا در بارگذاری پرداخت‌ها', 'error');
+      console.error("خطا در آماده‌سازی فیلترها:", err);
+      showToast('خطا در پردازش فیلترها', 'error');
     }
   };
 
@@ -230,16 +235,6 @@ const PaymentsPage: React.FC = () => {
     }
   };
 
-  // تغییر وضعیت پرداخت به "پرداخت شده"
-  const handleMarkAsPaid = async (paymentId: number) => {
-    try {
-      await changePaymentStatus(paymentId, 'PAID');
-      showToast('وضعیت پرداخت با موفقیت به‌روزرسانی شد', 'success');
-      loadPayments(); // بارگذاری مجدد لیست
-    } catch (err: any) {
-      showToast(err.message || 'خطا در تغییر وضعیت پرداخت', 'error');
-    }
-  };
   // رندر صفحه
   return (
     <Box p={3}>
