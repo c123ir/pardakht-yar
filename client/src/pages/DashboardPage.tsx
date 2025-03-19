@@ -6,730 +6,667 @@ import {
   Box, 
   Typography, 
   Grid, 
-  Card, 
-  CardContent, 
-  Chip,
-  Avatar,
-  IconButton,
-  useTheme,
+  Paper, 
+  useTheme, 
   alpha,
   LinearProgress,
-  Divider
+  Divider,
+  Container,
+  Button
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import { 
-  AccountBalance as AccountBalanceIcon,
-  TrendingUp as TrendingUpIcon,
-  People as PeopleIcon,
-  EventNote as EventNoteIcon,
-  MoreVert as MoreVertIcon,
-  ReceiptLong as ReceiptIcon,
-  CreditCard as CreditCardIcon,
-  Email as EmailIcon,
-  Notifications as NotificationsIcon,
-  CalendarMonth as CalendarIcon,
-  Check as CheckIcon,
-  ArrowForward as ArrowForwardIcon,
-  ArrowBack as ArrowBackIcon
-} from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
+import {
+  TrendingUp as TrendingUpIcon,
+  AttachMoney as AttachMoneyIcon,
+  Description as DescriptionIcon,
+  People as PeopleIcon,
+  CheckCircle as CheckCircleIcon,
+  CalendarToday as CalendarTodayIcon,
+  Error as ErrorIcon,
+  ArrowUpward as ArrowUpwardIcon,
+} from '@mui/icons-material';
 
 // کامپوننت سربرگ
-const Header = () => {
+const Header = ({ date }: { date: Date }) => {
   const theme = useTheme();
   const { user } = useAuth();
-  const [currentTime, setCurrentTime] = useState(new Date());
-  
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    
-    return () => clearInterval(timer);
-  }, []);
   
   const formatDate = () => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const options = { 
+      weekday: 'long' as const, 
+      year: 'numeric' as const, 
+      month: 'long' as const, 
+      day: 'numeric' as const 
     };
-    return new Intl.DateTimeFormat('fa-IR', options).format(currentTime);
+    return new Intl.DateTimeFormat('fa-IR', options).format(date);
+    
   };
   
+  const greeting = () => {
+    const hour = date.getHours();
+    if (hour < 12) {
+      return 'صبح بخیر';
+    } else if (hour < 17) {
+      return 'ظهر بخیر';
+    } else {
+      return 'عصر بخیر';
+    }
+  };
+
   return (
-    <Box
+    <Box 
+    
       component={motion.div}
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
       sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         mb: 4,
-      }}
-    >
-      <Box>
-        <Typography
-          variant="h4"
-          component="h1"
-          fontWeight="bold"
-          sx={{
-            background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-            backgroundClip: 'text',
-            textFillColor: 'transparent',
-            mb: 1,
-          }}
-        >
-          {user ? `سلام، ${user.username}!` : 'داشبورد'}
-        </Typography>
-        <Typography color="text.secondary" variant="body2">
-          {formatDate()}
-        </Typography>
-      </Box>
-      
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <IconButton 
-          sx={{ 
-            background: alpha(theme.palette.background.paper, 0.1),
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            p: 1,
-            '&:hover': {
-              background: alpha(theme.palette.background.paper, 0.2),
-            }
-          }}
-        >
-          <CalendarIcon fontSize="small" />
-        </IconButton>
+        p: 3,
+        borderRadius: 4,
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.8)}, ${alpha(theme.palette.secondary.dark, 0.8)})`,
         
-        <IconButton 
-          sx={{ 
-            background: alpha(theme.palette.background.paper, 0.1),
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            p: 1,
-            '&:hover': {
-              background: alpha(theme.palette.background.paper, 0.2),
-            }
-          }}
-        >
-          <NotificationsIcon fontSize="small" />
-        </IconButton>
-        
-        <Box 
-          component={motion.div}
-          whileHover={{ scale: 1.05 }}
-          sx={{ 
-            ml: 1, 
-            cursor: 'pointer',
-            position: 'relative',
-          }}
-        >
-          <Avatar 
-            alt={user?.username} 
-            src="/user-avatar.jpg"
-            sx={{ 
-              width: 40, 
-              height: 40,
-              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-              border: `2px solid ${alpha(theme.palette.background.paper, 0.8)}`,
-            }}
-          />
-          <Box 
-            sx={{ 
-              position: 'absolute', 
-              bottom: 0, 
-              right: 0, 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%', 
-              background: theme.palette.success.main,
-              border: `2px solid ${theme.palette.background.paper}` 
-            }} 
-          />
-        </Box>
-      </Box>
-    </Box>
-  );
-};
-
-// کارت آماری
-const StatCard = ({ 
-  title, 
-  value, 
-  description, 
-  icon: Icon, 
-  color = 'primary',
-  trendValue,
-  delay = 0 
-}: { 
-  title: string; 
-  value: string; 
-  description: string; 
-  icon: React.ElementType;
-  color?: 'primary' | 'secondary' | 'success' | 'info' | 'warning';
-  trendValue?: string;
-  delay?: number;
-}) => {
-  const theme = useTheme();
-  
-  return (
-    <Card
-      component={motion.div}
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay, type: 'spring', stiffness: 100 }}
-      sx={{
-        height: '100%',
-        borderRadius: '16px',
-        background: alpha(theme.palette.background.paper, 0.1),
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        boxShadow: `0 10px 30px -5px ${alpha(theme.palette.common.black, 0.1)}`,
-        overflow: 'hidden',
+        color: 'white',
         position: 'relative',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-5px)',
-          boxShadow: `0 15px 40px -5px ${alpha(theme.palette.common.black, 0.15)}`,
-        },
+        overflow: 'hidden',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        backdropFilter: 'blur(8px)',
       }}
     >
+      {/* افکت کریستالی در پس‌زمینه */}
       <Box
         sx={{
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
-          opacity: 0.03,
-          background: `radial-gradient(circle at 30% 30%, ${theme.palette[color].main} 0%, transparent 70%)`,
+          right: 0,
+          bottom: 0,
+          opacity: 0.1,
+          background: `radial-gradient(circle at 20% 20%, ${alpha(theme.palette.common.white, 0.3)} 0%, transparent 50%),
+                       radial-gradient(circle at 80% 80%, ${alpha(theme.palette.primary.light, 0.3)} 0%, transparent 50%)`,
           zIndex: 0,
-        }}
-      />
-      
-      <CardContent sx={{ position: 'relative', zIndex: 1, p: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography 
-            color="text.secondary" 
-            variant="subtitle2"
-            sx={{ fontWeight: 500 }}
-          >
-            {title}
-          </Typography>
-          
-          <Box
-            sx={{
-              borderRadius: '12px',
-              width: 40,
-              height: 40,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: alpha(theme.palette[color].main, 0.1),
-              color: theme.palette[color].main,
-              boxShadow: `0 4px 12px ${alpha(theme.palette[color].main, 0.2)}`,
-            }}
-          >
-            <Icon fontSize="small" />
-          </Box>
-        </Box>
-        
-        <Typography 
-          variant="h4" 
-          component="div" 
-          sx={{ 
-            my: 2, 
-            fontWeight: 'bold',
-            color: theme.palette.text.primary
-          }}
-        >
-          {value}
-        </Typography>
-        
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-          >
-            {description}
-          </Typography>
-          
-          {trendValue && (
-            <Chip
-              size="small"
-              label={trendValue}
-              icon={<TrendingUpIcon fontSize="small" />}
-              sx={{
-                background: alpha(theme.palette.success.main, 0.1),
-                color: theme.palette.success.main,
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                height: 24,
-                '& .MuiChip-icon': {
-                  color: theme.palette.success.main,
-                }
-              }}
-            />
-          )}
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
-
-// کامپوننت لیست کارها
-const TodoList = () => {
-  const theme = useTheme();
-  
-  const todos = [
-    { 
-      id: 1, 
-      title: 'بررسی صورت‌حساب شرکت الف', 
-      date: 'امروز - ساعت ۱۵:۰۰', 
-      icon: <ReceiptIcon fontSize="small" /> 
-    },
-    { 
-      id: 2, 
-      title: 'پرداخت حقوق کارمندان', 
-      date: 'فردا - ساعت ۱۰:۰۰', 
-      icon: <CreditCardIcon fontSize="small" /> 
-    },
-    { 
-      id: 3, 
-      title: 'جلسه با بخش مالی', 
-      date: 'پنج‌شنبه - ساعت ۱۳:۳۰', 
-      icon: <PeopleIcon fontSize="small" /> 
-    }
-  ];
-  
-  return (
-    <Card
-      component={motion.div}
-      initial={{ x: 20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.4, type: 'spring' }}
-      sx={{
-        borderRadius: '16px',
-        background: alpha(theme.palette.background.paper, 0.1),
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        boxShadow: `0 10px 30px -5px ${alpha(theme.palette.common.black, 0.1)}`,
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      <CardContent sx={{ p: 3, height: '100%' }}>
-        <Typography 
-          variant="h6" 
-          fontWeight="bold" 
-          gutterBottom
-          sx={{ mb: 3 }}
-        >
-          کارهای امروز
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {todos.map((todo, index) => (
-            <Box 
-              key={todo.id}
-              component={motion.div}
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.5 + (index * 0.1) }}
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                p: 2,
-                borderRadius: '12px',
-                background: alpha(theme.palette.background.paper, 0.3),
-                border: `1px solid ${alpha(theme.palette.divider, 0.05)}`,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  background: alpha(theme.palette.background.paper, 0.5),
-                  transform: 'translateY(-2px)',
-                  boxShadow: `0 5px 15px ${alpha(theme.palette.common.black, 0.05)}`,
-                },
-              }}
-            >
-              <Box 
-                sx={{ 
-                  mr: 2, 
-                  borderRadius: '10px',
-                  width: 36,
-                  height: 36,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main
-                }}
-              >
-                {todo.icon}
-              </Box>
-              
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body1" fontWeight="500">
-                  {todo.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {todo.date}
-                </Typography>
-              </Box>
-              
-              <IconButton 
-                size="small" 
-                sx={{ 
-                  color: theme.palette.success.main,
-                  background: alpha(theme.palette.success.main, 0.1),
-                  width: 30,
-                  height: 30,
-                  '&:hover': {
-                    background: alpha(theme.palette.success.main, 0.2),
-                  }
-                }}
-              >
-                <CheckIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          ))}
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
-
-// کامپوننت آخرین ایمیل‌ها
-const RecentEmails = () => {
-  const theme = useTheme();
-  
-  const emails = [
-    {
-      id: 1,
-      sender: 'محمد محمدی',
-      subject: 'گزارش مالی هفتگی',
-      preview: 'طبق درخواست شما، گزارش مالی هفته گذشته به پیوست...',
-      time: '۱۳:۴۵',
-      avatar: '/avatar1.jpg'
-    },
-    {
-      id: 2,
-      sender: 'سارا حسینی',
-      subject: 'پیش‌نویس قرارداد جدید',
-      preview: 'سلام، پیش‌نویس قرارداد با شرکت فرآیند را بررسی کردم...',
-      time: '۱۱:۲۰',
-      avatar: '/avatar2.jpg'
-    },
-    {
-      id: 3,
-      sender: 'علی کریمی',
-      subject: 'جلسه بررسی پروژه',
-      preview: 'با سلام، زمان جلسه هفتگی بررسی پروژه به ساعت...',
-      time: 'دیروز',
-      avatar: '/avatar3.jpg'
-    }
-  ];
-  
-  return (
-    <Card
-      component={motion.div}
-      initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ delay: 0.3, type: 'spring' }}
-      sx={{
-        borderRadius: '16px',
-        background: alpha(theme.palette.background.paper, 0.1),
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        boxShadow: `0 10px 30px -5px ${alpha(theme.palette.common.black, 0.1)}`,
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      <CardContent sx={{ p: 3, height: '100%' }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h6" fontWeight="bold">
-            پیام‌های اخیر
-          </Typography>
-          
-          <IconButton 
-            size="small" 
-            sx={{ 
-              borderRadius: '8px',
-              background: alpha(theme.palette.background.paper, 0.2),
-              backdropFilter: 'blur(10px)',
-              '&:hover': {
-                background: alpha(theme.palette.background.paper, 0.3),
-              }
-            }}
-          >
-            <EmailIcon fontSize="small" />
-          </IconButton>
-        </Box>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {emails.map((email, index) => (
-            <React.Fragment key={email.id}>
-              <Box 
-                component={motion.div}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 + (index * 0.1) }}
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'flex-start',
-                  cursor: 'pointer',
-                  py: 1,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateX(-5px)',
-                  }
-                }}
-              >
-                <Avatar
-                  src={email.avatar}
-                  alt={email.sender}
-                  sx={{ 
-                    mr: 2, 
-                    width: 48, 
-                    height: 48,
-                    boxShadow: `0 4px 8px ${alpha(theme.palette.common.black, 0.1)}`,
-                    border: `2px solid ${alpha(theme.palette.background.paper, 0.2)}`,
-                  }}
-                />
-                
-                <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1" fontWeight="500" noWrap>
-                      {email.sender}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {email.time}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="subtitle2" fontWeight="medium" noWrap>
-                    {email.subject}
-                  </Typography>
-                  
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 1,
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                  >
-                    {email.preview}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              {index < emails.length - 1 && (
-                <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.08) }} />
-              )}
-            </React.Fragment>
-          ))}
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
-
-// کامپوننت کارت پیشرفت
-const ProgressCard = () => {
-  const theme = useTheme();
-  
-  return (
-    <Card
-      component={motion.div}
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.5, type: 'spring' }}
-      sx={{
-        borderRadius: '16px',
-        background: alpha(theme.palette.background.paper, 0.1),
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        boxShadow: `0 10px 30px -5px ${alpha(theme.palette.common.black, 0.1)}`,
-        overflow: 'hidden',
-      }}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Box 
-          sx={{ 
-            borderRadius: '12px',
-            background: alpha(theme.palette.primary.dark, 0.9),
-            p: 3,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '200%',
-              height: '200%',
-              background: `radial-gradient(circle at top right, ${alpha(theme.palette.primary.light, 0.2)}, transparent 70%)`,
-              transform: 'translate(-25%, -25%)',
-            }}
-          />
-          
-          <Typography 
-            variant="h6" 
-            fontWeight="bold" 
-            color="common.white"
-          >
-            ارتقای سیستم
-          </Typography>
-          
-          <Typography 
-            variant="body2" 
-            color="common.white" 
-            sx={{ opacity: 0.8, mb: 2 }}
-          >
-            در دست پیاده‌سازی...
-          </Typography>
-          
-          <Box sx={{ mb: 1 }}>
-            <LinearProgress 
-              variant="determinate" 
-              value={70} 
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: alpha(theme.palette.common.white, 0.2),
-                '& .MuiLinearProgress-bar': {
-                  background: 'linear-gradient(90deg, #fff, #f0f0f0)',
-                  borderRadius: 4,
-                }
-              }}
-            />
-          </Box>
-          
-          <Box display="flex" justifyContent="space-between">
-            <Typography variant="caption" color="common.white">
-              پیشرفت: ۷۰٪
-            </Typography>
-            <Typography variant="caption" color="common.white">
-              ۶ روز باقی‌مانده
-            </Typography>
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
-
-const DashboardPage: React.FC = () => {
-  const theme = useTheme();
-  
-  return (
-    <Box
-      sx={{
-        minHeight: 'calc(100vh - 80px)',
-        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.03)} 0%, ${alpha(theme.palette.secondary.dark, 0.03)} 100%)`,
-        borderRadius: '24px',
-        p: { xs: 2, md: 3 },
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      {/* پس‌زمینه دکوراتیو */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          opacity: 0.02,
-          backgroundImage: `radial-gradient(circle at 30% 20%, ${theme.palette.primary.main} 0%, transparent 80%),
-                           radial-gradient(circle at 70% 70%, ${theme.palette.secondary.main} 0%, transparent 70%)`,
-          zIndex: 0,
-          pointerEvents: 'none',
         }}
       />
       
       <Box sx={{ position: 'relative', zIndex: 1 }}>
-        <Header />
-        
-        <Grid container spacing={3}>
-          {/* کارت‌های آماری */}
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="موجودی حساب"
-              value="۱۲۲,۴۵۶,۰۰۰ ریال"
-              description="موجودی فعلی"
-              icon={AccountBalanceIcon}
-              color="primary"
-              delay={0.1}
-            />
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              {`${greeting()}، ${user?.username || 'کاربر گرامی'}`}
+            </Typography>
+            <Typography variant="body1">
+              {formatDate()}
+            </Typography>
           </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="درخواست‌های ماه"
-              value="۱۵ مورد"
-              description="افزایش نسبت به ماه قبل"
-              icon={EventNoteIcon}
-              color="info"
-              trendValue="+۱۲.۵٪"
-              delay={0.2}
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="پرداخت‌های هفته"
-              value="۳,۲۸۶,۰۰۰ ریال"
-              description="۱۲ پرداخت انجام شده"
-              icon={CreditCardIcon}
-              color="success"
-              delay={0.3}
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="طرف‌حساب‌های فعال"
-              value="۲۴ مورد"
-              description="۳ طرف‌حساب جدید"
-              icon={PeopleIcon}
-              color="secondary"
-              delay={0.4}
-            />
-          </Grid>
-          
-          {/* کارت پیشرفت و کارهای در انتظار */}
-          <Grid item xs={12} md={5}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <ProgressCard />
-              </Grid>
-              <Grid item xs={12}>
-                <TodoList />
-              </Grid>
-            </Grid>
-          </Grid>
-          
-          {/* پیام‌های اخیر */}
-          <Grid item xs={12} md={7}>
-            <RecentEmails />
+          <Grid item xs={12} md={6} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+            <Typography variant="h6" fontWeight="medium">
+              سامانت - سامانه مدیریت عملیات تحت شبکه
+            </Typography>
           </Grid>
         </Grid>
       </Box>
     </Box>
+  );
+};
+
+// کامپوننت کارت آمار
+const StatCard = ({ 
+  title, 
+  value, 
+  icon, 
+  color, 
+  increase, 
+  delay = 0
+}: { 
+  title: string; 
+  value: string; 
+  icon: React.ReactNode; 
+  color: string; 
+  increase?: string;
+  delay?: number;
+}) => {
+  const theme = useTheme();
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay, duration: 0.5 }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 4,
+          background: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(8px)',
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          transition: 'transform 0.3s, box-shadow 0.3s',
+          '&:hover': {
+            transform: 'translateY(-5px)',
+            boxShadow: `0 12px 24px ${alpha(theme.palette.common.black, 0.15)}`,
+          },
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* گرادیان رنگی در گوشه کارت */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: 130,
+            height: 130,
+            background: `linear-gradient(135deg, ${alpha(color, 0.3)} 0%, transparent 60%)`,
+            borderRadius: '0 0 0 100%',
+            zIndex: 0,
+          }}
+        />
+
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'flex-start', 
+            justifyContent: 'space-between',
+            mb: 2,
+            zIndex: 1,
+          }}
+        >
+          <Typography color="text.secondary" variant="subtitle2">
+            {title}
+          </Typography>
+          <Box 
+            sx={{ 
+              background: alpha(color, 0.1), 
+              borderRadius: '50%', 
+              p: 1,
+              display: 'flex',
+              color
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+        
+        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ zIndex: 1 }}>
+          {value}
+        </Typography>
+        
+        {increase && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 'auto', zIndex: 1 }}>
+            <ArrowUpwardIcon sx={{ color: 'success.main', fontSize: 16, mr: 0.5 }} />
+            <Typography color="success.main" variant="body2" fontWeight="medium">
+              {increase}
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+    </motion.div>
+  );
+};
+
+// کامپوننت کارت کارهای در انتظار
+const TasksCard = ({ delay = 0 }: { delay?: number }) => {
+  const theme = useTheme();
+  
+  const tasks = [
+    { id: 1, title: 'بررسی درخواست‌های جدید', status: 'در انتظار' },
+    { id: 2, title: 'تایید پرداخت‌های معلق', status: 'در انتظار' },
+    { id: 3, title: 'پاسخ به تیکت‌های پشتیبانی', status: 'تکمیل شده' },
+    { id: 4, title: 'بروزرسانی اطلاعات کاربران', status: 'در حال انجام' },
+    { id: 5, title: 'گزارش عملکرد ماهانه', status: 'در انتظار' },
+  ];
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay, duration: 0.5 }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 4,
+          background: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(8px)',
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        }}
+      >
+        <Typography variant="h6" fontWeight="medium" mb={2}>
+          کارهای در انتظار
+        </Typography>
+        
+        <Box sx={{ flexGrow: 1 }}>
+          {tasks.map((task) => (
+            <Box 
+              key={task.id}
+              sx={{ 
+                py: 1.5, 
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {task.status === 'تکمیل شده' ? (
+                  <CheckCircleIcon sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                ) : task.status === 'در حال انجام' ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                  >
+                    <CalendarTodayIcon sx={{ color: theme.palette.primary.main, mr: 1, fontSize: 20 }} />
+                  </motion.div>
+                ) : (
+                  <ErrorIcon sx={{ color: theme.palette.warning.main, mr: 1, fontSize: 20 }} />
+                )}
+                <Typography 
+                  variant="body2"
+                  sx={{ 
+                    textDecoration: task.status === 'تکمیل شده' ? 'line-through' : 'none',
+                    color: task.status === 'تکمیل شده' ? 'text.secondary' : 'text.primary'
+                  }}
+                >
+                  {task.title}
+                </Typography>
+              </Box>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  px: 1.5, 
+                  py: 0.5, 
+                  borderRadius: 1,
+                  backgroundColor: task.status === 'تکمیل شده' 
+                    ? alpha(theme.palette.success.main, 0.1)
+                    : task.status === 'در حال انجام'
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : alpha(theme.palette.warning.main, 0.1),
+                  color: task.status === 'تکمیل شده' 
+                    ? theme.palette.success.main
+                    : task.status === 'در حال انجام'
+                      ? theme.palette.primary.main
+                      : theme.palette.warning.main,
+                }}
+              >
+                {task.status}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Paper>
+    </motion.div>
+  );
+};
+
+// کامپوننت کارت پیام‌های اخیر
+const MessagesCard = ({ delay = 0 }: { delay?: number }) => {
+  const theme = useTheme();
+  
+  const messages = [
+    { id: 1, sender: 'علی محمدی', content: 'درخواست جدید ثبت شده است', time: '10:30', avatar: '/avatars/avatar1.jpg' },
+    { id: 2, sender: 'سارا احمدی', content: 'گزارش ماهانه آماده بررسی است', time: '09:15', avatar: '/avatars/avatar2.jpg' },
+    { id: 3, sender: 'محمد رضایی', content: 'تیکت جدید در سیستم پشتیبانی', time: 'دیروز', avatar: '/avatars/avatar3.jpg' },
+  ];
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay, duration: 0.5 }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 4,
+          background: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(8px)',
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        }}
+      >
+        <Typography variant="h6" fontWeight="medium" mb={2}>
+          پیام‌های اخیر
+        </Typography>
+        
+        <Box sx={{ flexGrow: 1 }}>
+          {messages.map((message) => (
+            <Box 
+              key={message.id}
+              sx={{ 
+                py: 1.5, 
+                display: 'flex',
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              }}
+            >
+              <Box 
+                sx={{ 
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  mr: 2,
+                  flexShrink: 0,
+                }}
+              >
+                {message.sender.charAt(0)}
+              </Box>
+              <Box sx={{ flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" fontWeight="medium">
+                    {message.sender}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {message.time}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {message.content}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+        
+        <Button 
+          variant="text" 
+          fullWidth 
+          sx={{ mt: 2 }}
+          component={motion.button}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          مشاهده همه پیام‌ها
+        </Button>
+      </Paper>
+    </motion.div>
+  );
+};
+
+// کامپوننت کارت پروژه
+const ProjectCard = ({ delay = 0 }: { delay?: number }) => {
+  const theme = useTheme();
+  
+  const project = {
+    name: 'سامانت - نسخه ۱.۰',
+    description: 'پروژه توسعه سامانه مدیریت عملیات تحت شبکه',
+    progress: 72,
+    tasks: { completed: 45, total: 78 },
+  };
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay, duration: 0.5 }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 4,
+          background: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(8px)',
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Typography variant="h6" fontWeight="medium" gutterBottom>
+          {project.name}
+        </Typography>
+        
+        <Typography variant="body2" color="text.secondary" paragraph>
+          {project.description}
+        </Typography>
+        
+        <Box sx={{ mb: 2, mt: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="body2">پیشرفت پروژه</Typography>
+            <Typography variant="body2" fontWeight="medium">{project.progress}%</Typography>
+          </Box>
+          <LinearProgress 
+            variant="determinate" 
+            value={project.progress} 
+            sx={{ 
+              height: 6, 
+              borderRadius: 3,
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              '& .MuiLinearProgress-bar': {
+                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+              }
+            }} 
+          />
+        </Box>
+        
+        <Divider sx={{ my: 2, opacity: 0.1 }} />
+        
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
+          <Typography variant="body2" color="text.secondary">
+            تکمیل شده: {project.tasks.completed} از {project.tasks.total}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              px: 1.5, 
+              py: 0.5, 
+              borderRadius: 1,
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              color: theme.palette.primary.main
+            }}
+          >
+            در حال پیشرفت
+          </Typography>
+        </Box>
+      </Paper>
+    </motion.div>
+  );
+};
+
+const DashboardPage = () => {
+  const [date, setDate] = useState(new Date());
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDate(new Date());
+    }, 60000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  // تابع برای شمارش کلیک‌ها
+  const handleHeaderClick = () => {
+    setShowEasterEgg(prev => !prev);
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      {/* سورپرایز مخفی */}
+      {showEasterEgg && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            flexDirection: 'column',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ 
+              scale: [0.5, 1.2, 1],
+              opacity: 1,
+              rotate: [0, 10, 0, -10, 0]
+            }}
+            transition={{ 
+              duration: 1.5,
+              ease: "easeInOut"
+            }}
+          >
+            <Typography
+              variant="h2"
+              component="div"
+              sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(90deg, #ff9a9e, #fad0c4, #a1c4fd)',
+                backgroundClip: 'text',
+                textFillColor: 'transparent',
+                textAlign: 'center',
+                mb: 3
+              }}
+            >
+              🎉 آفرین! شما ویژگی مخفی را پیدا کردید 🎉
+            </Typography>
+          </motion.div>
+          
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                color: '#ffffff',
+                textAlign: 'center',
+                maxWidth: '600px',
+                mb: 4
+              }}
+            >
+              ممنون از اینکه از سامانت استفاده می‌کنید! ما برای بهترین کاربران خود سورپرایز‌های مخفی داریم.
+            </Typography>
+          </motion.div>
+          
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              y: [0, -10, 0],
+            }}
+            transition={{
+              repeat: Infinity,
+              repeatType: "reverse",
+              duration: 2,
+            }}
+          >
+            <Button
+              variant="contained"
+              sx={{
+                background: 'linear-gradient(90deg, #a1c4fd, #c2e9fb)',
+                color: '#1a1a1a',
+                fontWeight: 'bold',
+                padding: '12px 24px',
+                borderRadius: '12px',
+                boxShadow: '0 10px 20px rgba(0,0,0,0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #c2e9fb, #a1c4fd)',
+                }
+              }}
+              onClick={() => setShowEasterEgg(false)}
+            >
+              ادامه استفاده از داشبورد
+            </Button>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* هدر */}
+      <motion.div 
+        whileHover={{ scale: 1.01 }}
+        onClick={handleHeaderClick}
+        style={{ cursor: 'pointer' }}
+      >
+        <Header date={date} />
+      </motion.div>
+
+      <Grid container spacing={3}>
+        {/* ردیف اول - کارت‌های آمار */}
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard 
+            title="درخواست‌ها" 
+            value="856" 
+            icon={<DescriptionIcon />}
+            color={useTheme().palette.primary.main}
+            increase="12% از ماه گذشته"
+            delay={0.1}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard 
+            title="پرداخت‌ها" 
+            value="۱,۵۴۰,۰۰۰ تومان" 
+            icon={<AttachMoneyIcon />}
+            color={useTheme().palette.success.main}
+            increase="8% از ماه گذشته"
+            delay={0.2}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard 
+            title="کاربران" 
+            value="35" 
+            icon={<PeopleIcon />}
+            color={useTheme().palette.warning.main}
+            increase="3 کاربر جدید"
+            delay={0.3}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard 
+            title="رشد" 
+            value="24%" 
+            icon={<TrendingUpIcon />}
+            color={useTheme().palette.secondary.main}
+            increase="2% از ماه گذشته"
+            delay={0.4}
+          />
+        </Grid>
+
+        {/* ردیف دوم - کارت‌های اطلاعات تفصیلی */}
+        <Grid item xs={12} md={5}>
+          <TasksCard delay={0.5} />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <MessagesCard delay={0.6} />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <ProjectCard delay={0.7} />
+        </Grid>
+      </Grid>
+    </Container>
   );
 };
 

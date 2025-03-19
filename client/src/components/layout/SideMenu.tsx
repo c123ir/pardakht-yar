@@ -2,183 +2,212 @@
 // کامپوننت منوی کناری
 
 import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Drawer,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  IconButton,
-  Divider,
   ListItemButton,
-  Toolbar,
+  Divider,
+  Box,
+  Typography,
+  useTheme,
+  alpha,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Event as EventIcon,
+  Settings as SettingsIcon,
+  Description as DescriptionIcon,
+  Payment as PaymentIcon,
+  Category as CategoryIcon,
+  Inventory as InventoryIcon,
+  Summarize as SummarizeIcon,
 } from '@mui/icons-material';
-import PaymentIcon from '@mui/icons-material/Payment';
-import GroupIcon from '@mui/icons-material/Group';
-import ContactsIcon from '@mui/icons-material/Contacts';
-import SmsIcon from '@mui/icons-material/Sms';
-import FolderIcon from '@mui/icons-material/Folder';
-import { useLocation } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-
-const drawerWidth = 240;
+import { motion } from 'framer-motion';
+import AnimatedLogo from './AnimatedLogo';
 
 interface SideMenuProps {
   open: boolean;
-  toggleDrawer: () => void;
+  onClose: () => void;
 }
 
-// منوی کشویی با انیمیشن
-const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'open' })(
-  ({ theme, open }) => ({
-    '& .MuiDrawer-paper': {
-      position: 'relative',
-      whiteSpace: 'nowrap',
-      width: drawerWidth,
-      transition: theme.transitions.create('width', {
-        easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.enteringScreen,
-      }),
-      boxSizing: 'border-box',
-      ...(!open && {
-        overflowX: 'hidden',
-        transition: theme.transitions.create('width', {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.leavingScreen,
-        }),
-        width: theme.spacing(7),
-        [theme.breakpoints.up('sm')]: {
-          width: theme.spacing(9),
-        },
-      }),
-    },
-  }),
-);
+interface MenuItemType {
+  title: string;
+  path: string;
+  icon: React.ReactNode;
+  divider?: boolean;
+}
 
-const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
+const SideMenu: React.FC<SideMenuProps> = ({ open, onClose }) => {
+  const theme = useTheme();
   const location = useLocation();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
-  const isFinancialManager = user?.role === 'FINANCIAL_MANAGER';
-  const isAdminOrFinancial = isAdmin || isFinancialManager;
-  
-  // آیتم‌های منوی اصلی
-  const mainMenuItems = [
-    { text: 'داشبورد', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'پرداخت‌ها', icon: <PaymentIcon />, path: '/payments' },
-    { text: 'گروه‌ها', icon: <GroupIcon />, path: '/groups' },
-    { text: 'طرف‌حساب‌ها', icon: <ContactsIcon />, path: '/contacts' },
+  const navigate = useNavigate();
+
+  const menuItems: MenuItemType[] = [
+    { title: 'داشبورد', path: '/', icon: <DashboardIcon /> },
+    { title: 'درخواست‌ها', path: '/requests', icon: <DescriptionIcon /> },
+    { title: 'پرداخت‌ها', path: '/payments', icon: <PaymentIcon /> },
+    { title: 'انواع درخواست', path: '/request-types', icon: <CategoryIcon /> },
+    { title: 'طرف‌حساب‌ها', path: '/accounts', icon: <PeopleIcon />, divider: true },
+    { title: 'رویدادها', path: '/events', icon: <EventIcon /> },
+    { title: 'موجودی‌ها', path: '/inventory', icon: <InventoryIcon /> },
+    { title: 'گزارش‌ها', path: '/reports', icon: <SummarizeIcon />, divider: true },
+    { title: 'تنظیمات', path: '/settings', icon: <SettingsIcon /> },
   ];
 
-  // آیتم‌های منوی سیستم درخواست‌ها - برای ادمین و مدیر مالی
-  const requestMenuItems = [
-    { text: 'گروه‌های درخواست', icon: <FolderIcon />, path: '/request-groups' },
-  ];
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (window.innerWidth < 900) {
+      onClose();
+    }
+  };
 
-  // آیتم‌های منوی مدیریت - فقط برای ادمین
-  const adminMenuItems = [
-    { text: 'مدیریت کاربران', icon: <PeopleIcon />, path: '/users' },
-    { text: 'مدیریت رویدادها', icon: <EventIcon />, path: '/request-types' },
-    { text: 'تنظیمات پیامک', icon: <SmsIcon />, path: '/settings/sms' },
-  ];
+  const container  = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.07,
+        delayChildren: 0.3,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } },
+  };
 
   return (
-    <StyledDrawer variant="permanent" open={open}>
-      <Toolbar
+    <Drawer
+      variant="persistent"
+      anchor="left"
+      open={open}
+      sx={{
+        width: 240,
+        flexShrink: 0,
+        zIndex: theme.zIndex.drawer,
+        '& .MuiDrawer-paper': {
+          width: 240,
+          top:50,
+          boxSizing: 'border-box',
+          background: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(10px)',
+          borderRight: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          boxShadow: `4px 0 15px ${alpha(theme.palette.common.black, 0.05)}`,
+          paddingY: 1,
+        },
+      }}
+    >
+      <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
-          px: [1],
+          justifyContent: 'center',
+          padding: 2,
+          mb: 2,
         }}
       >
-        <IconButton onClick={toggleDrawer}>
-          <ChevronRightIcon />
-        </IconButton>
-      </Toolbar>
-      <Divider />
-      <List component="nav">
-        {/* منوی اصلی */}
-        {mainMenuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              selected={location.pathname === item.path}
+        <AnimatedLogo size="medium" colorMode="dark" />
+      </Box>
+
+      <Divider sx={{ opacity: 0.1 }} />
+
+      <List component={motion.ul} variants={container} initial="hidden" animate="show" >
+        {menuItems.map((menuItem) => (
+          <React.Fragment key={menuItem.path}>
+            <Box
+              component={motion.li}
+              variants={item}
+              sx={{ display: 'block', px: 2, py: 0.5 }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  selected={location.pathname === menuItem.path}
+                  onClick={() => handleNavigate(menuItem.path)}
+                  sx={{
+                    borderRadius: '12px',
+                    px: 2,
+                    py: 1.5,
+                    background: location.pathname === menuItem.path ? 
+                      alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                    '&:hover': {
+                      background: location.pathname === menuItem.path ?
+                        alpha(theme.palette.primary.main, 0.15) : 
+                        alpha(theme.palette.primary.main, 0.05),
+                    },
+                    '&.Mui-selected': {
+                      background: alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        background: alpha(theme.palette.primary.main, 0.15),
+                      },
+                    },
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 40,
+                      color: location.pathname === menuItem.path ? 
+                        theme.palette.primary.main : 
+                        theme.palette.text.secondary,
+                    }}
+                  >
+                    {menuItem.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: location.pathname === menuItem.path ? 600 : 400,
+                          fontSize: '0.95rem',
+                          color: location.pathname === menuItem.path ? 
+                            theme.palette.primary.main : 
+                            theme.palette.text.primary,
+                        }}
+                      >
+                        {menuItem.title}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            </Box>
+            {menuItem.divider && (
+              <Divider sx={{ my: 1.5, opacity: 0.1 }} />
+            )}
+          </React.Fragment>
         ))}
-        
-        {/* منوی سیستم درخواست‌ها - برای ادمین و مدیر مالی */}
-        {isAdminOrFinancial && requestMenuItems.length > 0 && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <ListItem>
-              <ListItemText 
-                primary="سیستم درخواست‌ها" 
-                primaryTypographyProps={{ 
-                  variant: 'caption', 
-                  color: 'text.secondary' 
-                }} 
-              />
-            </ListItem>
-            
-            {requestMenuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  selected={location.pathname === item.path}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </>
-        )}
-        
-        {/* منوی مدیریت - فقط برای ادمین */}
-        {isAdmin && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <ListItem>
-              <ListItemText 
-                primary="مدیریت سیستم" 
-                primaryTypographyProps={{ 
-                  variant: 'caption', 
-                  color: 'text.secondary' 
-                }} 
-              />
-            </ListItem>
-            
-            {adminMenuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  selected={location.pathname === item.path}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </>
-        )}
       </List>
-    </StyledDrawer>
+
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2 }}
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          textAlign: 'center',
+          padding: 2,
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ opacity: 0.6 }}
+        >
+          سامانت - نسخه ۱.۰.۰
+        </Typography>
+      </Box>
+    </Drawer>
   );
 };
 

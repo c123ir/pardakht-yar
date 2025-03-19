@@ -137,7 +137,6 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
   // استیت‌های دیالوگ ویرایش فیلد
   const [currentField, setCurrentField] = useState<{ key: string; setting: FieldSetting } | null>(null);
   const [customFields, setCustomFields] = useState<{ [key: string]: FieldSetting }>({});
-  const [newFieldKey, setNewFieldKey] = useState('');
   
   // استیت‌های اعتبارسنجی
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -226,42 +225,9 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     }));
   };
 
-  // باز کردن دیالوگ ویرایش فیلد
-  const handleOpenEditDialog = (key: string, isCustom: boolean = false) => {
-    if (isCustom) {
-      setCurrentField({ key, setting: customFields[key] });
-    } else {
-      setCurrentField({
-        key,
-        setting: (formData.fieldConfig as FieldConfig)[key as keyof typeof DEFAULT_FIELD_CONFIG],
-      });
-    }
-  };
-
   // بستن دیالوگ ویرایش فیلد
   const handleCloseEditDialog = () => {
     setCurrentField(null);
-  };
-
-  // ذخیره تنظیمات فیلد
-  const handleSaveFieldSettings = () => {
-    if (!currentField) return;
-    
-    const { key, setting } = currentField;
-    
-    if (Object.keys(DEFAULT_FIELD_CONFIG).includes(key)) {
-      handleFieldConfigChange(key as keyof FieldConfig, {
-        label: setting.label,
-        enabled: setting.enabled,
-        required: setting.required,
-      });
-    } else {
-      handleCustomFieldSettingChange(key, 'label', setting.label);
-      handleCustomFieldSettingChange(key, 'enabled', setting.enabled);
-      handleCustomFieldSettingChange(key, 'required', setting.required);
-    }
-    
-    handleCloseEditDialog();
   };
 
   // حذف فیلد سفارشی
@@ -273,41 +239,6 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     });
   };
 
-  // باز کردن دیالوگ افزودن فیلد سفارشی
-  const handleOpenAddCustomFieldDialog = () => {
-    setNewFieldKey('');
-  };
-
-  // بستن دیالوگ افزودن فیلد سفارشی
-  const handleCloseAddCustomFieldDialog = () => {
-    setNewFieldKey('');
-  };
-
-  // افزودن فیلد سفارشی جدید
-  const handleAddCustomField = () => {
-    if (!newFieldKey.trim()) {
-      return;
-    }
-    
-    // بررسی تکراری نبودن کلید
-    if (Object.keys(DEFAULT_FIELD_CONFIG).includes(newFieldKey) || customFields[newFieldKey]) {
-      alert('این کلید قبلاً استفاده شده است. لطفاً کلید دیگری انتخاب کنید.');
-      return;
-    }
-    
-    // افزودن فیلد سفارشی جدید
-    setCustomFields((prev) => ({
-      ...prev,
-      [newFieldKey]: {
-        enabled: true,
-        required: false,
-        label: newFieldKey,
-      },
-    }));
-    
-    handleCloseAddCustomFieldDialog();
-  };
-
   // ارسال فرم
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,7 +246,7 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     // اعتبارسنجی
     const newErrors: { [key: string]: string } = {};
     
-    if (!formData.name?.trim()) {
+    if (!formData.name) {
       newErrors.name = 'نام نوع درخواست الزامی است';
     }
     
@@ -325,46 +256,47 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     }
     
     // ترکیب فیلدهای استاندارد و سفارشی
-    const completeFieldConfig = {
+    const combinedFieldConfig = {
       ...(formData.fieldConfig as FieldConfig),
       ...customFields,
     };
     
     onSave({
       ...formData,
-      fieldConfig: completeFieldConfig,
+      fieldConfig: combinedFieldConfig,
     });
   };
 
   const handleMoveField = (field: keyof FieldConfig, direction: 'up' | 'down') => {
-    const fieldConfig = formData.fieldConfig as FieldConfig;
-    const fields = Object.entries(fieldConfig)
-      .map(([key, value]) => ({ key, ...value }))
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const index = fields.findIndex((f) => f.key === field);
-    if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === fields.length - 1)
-    ) {
-      return;
-    }
-
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    const currentOrder = fields[index].order || 0;
-    fields[index].order = fields[newIndex].order || 0;
-    fields[newIndex].order = currentOrder;
-
-    const newFieldConfig = {} as FieldConfig;
-    fields.forEach((field) => {
-      const { key, ...setting } = field;
-      newFieldConfig[key as keyof FieldConfig] = setting as FieldSetting;
+    setFormData((prev) => {
+      const currentConfig = prev.fieldConfig as FieldConfig;
+      const currentOrder = currentConfig[field]?.order || 0;
+      const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
+      
+      // یافتن فیلدی که باید جابجا شود
+      const fieldToSwap = Object.keys(currentConfig).find(
+        (key) => currentConfig[key as keyof FieldConfig].order === newOrder
+      ) as keyof FieldConfig;
+      
+      if (!fieldToSwap) return prev;
+      
+      const newConfig = {
+        ...currentConfig,
+        [field]: {
+          ...currentConfig[field],
+          order: newOrder,
+        },
+        [fieldToSwap]: {
+          ...currentConfig[fieldToSwap],
+          order: currentOrder,
+        },
+      };
+      
+      return {
+        ...prev,
+        fieldConfig: newConfig,
+      };
     });
-
-    setFormData((prev) => ({
-      ...prev,
-      fieldConfig: newFieldConfig,
-    }));
   };
 
   const sortedFields = Object.entries(formData.fieldConfig || {})

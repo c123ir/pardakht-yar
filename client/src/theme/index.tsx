@@ -1,5 +1,6 @@
-import { createTheme, alpha } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
 import { faIR } from '@mui/material/locale';
+import { IranSans } from '../assets/fonts/index';
 
 const theme = createTheme({
   direction: 'rtl',
@@ -232,7 +233,7 @@ const theme = createTheme({
       secondary: 'rgba(255, 255, 255, 0.7)',
       disabled: 'rgba(255, 255, 255, 0.5)',
     },
-    divider: 'rgba(255, 255, 255, 0.12)',
+    divider: 'rgba(255, 255, 255, 0.12)', 
     action: {
       active: '#ffffff',
       hover: 'rgba(255, 255, 255, 0.08)',

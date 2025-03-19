@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
-import { Visibility, VisibilityOff, MailOutline, Lock } from '@mui/icons-material';
+import { Visibility, VisibilityOff, MailOutline, Lock, Fingerprint } from '@mui/icons-material';
 
 // آیکون‌های فارسی
 const Logo = () => (
@@ -57,12 +57,23 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showFingerprint, setShowFingerprint] = useState(true);
   
   const { login } = useAuth();
 
+  const handleClickAnywhere = () => {
+    setShowFingerprint(false);
+  };
+
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    
+    document.addEventListener('click', handleClickAnywhere);
+    
+    return () => {
+      setMounted(false);
+      document.removeEventListener('click', handleClickAnywhere);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,6 +123,55 @@ const LoginPage: React.FC = () => {
         background: `linear-gradient(135deg, ${colors.gradientStart} 0%, ${colors.gradientEnd} 100%)`,
       }}
     >
+      {/* اثر انگشت متحرک */}
+      {showFingerprint && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ 
+            opacity: [0.2, 0.8, 0.2],
+            scale: [0.9, 1.1, 0.9],
+            y: [0, -20, 0] 
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            repeatType: 'loop'
+          }}
+          style={{
+            position: 'absolute',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: colors.accent,
+            pointerEvents: 'none'
+          }}
+          exit={{ 
+            opacity: 0, 
+            scale: 2,
+            rotate: 20,
+            transition: { duration: 0.5 } 
+          }}
+        >
+          <Fingerprint sx={{ fontSize: 80, filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.7)})` }} />
+          <Typography
+            variant="subtitle1"
+            sx={{
+              color: colors.textPrimary,
+              mt: 2,
+              fontWeight: 'bold',
+              background: `linear-gradient(90deg, ${colors.primary}, ${colors.accent})`,
+              backgroundClip: 'text',
+              textFillColor: 'transparent',
+              filter: `drop-shadow(0 0 5px ${alpha(colors.accent, 0.5)})`,
+            }}
+          >
+            برای ورود، صفحه را لمس کنید
+          </Typography>
+        </motion.div>
+      )}
+
       {/* پارتیکل‌های متحرک در پس‌زمینه */}
       {particles.map((particle) => (
         <Box
@@ -146,11 +206,11 @@ const LoginPage: React.FC = () => {
       ))}
 
       {/* کارت شیشه‌ای لاگین */}
-      <motion.di
+      <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 50 }}
         transition={{ 
-          type: "k", 
+          type: "spring", 
           stiffness: 100, 
           damping: 20, 
           delay: 0.2 
@@ -212,6 +272,21 @@ const LoginPage: React.FC = () => {
                   color: colors.accent,
                   mb: 2,
                   filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.5)})`,
+                  animation: 'pulse 3s infinite ease-in-out',
+                  '@keyframes pulse': {
+                    '0%': {
+                      transform: 'scale(1)',
+                      filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.5)})`,
+                    },
+                    '50%': {
+                      transform: 'scale(1.05) rotate(2deg)',
+                      filter: `drop-shadow(0 0 15px ${alpha(colors.accent, 0.7)})`,
+                    },
+                    '100%': {
+                      transform: 'scale(1)',
+                      filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.5)})`,
+                    },
+                  },
                 }}
               >
                 <Logo />
@@ -234,7 +309,7 @@ const LoginPage: React.FC = () => {
                   mb: 1,
                 }}
               >
-                اس ام
+                سامانت
               </Typography>
             </motion.div>
 
@@ -476,11 +551,11 @@ const LoginPage: React.FC = () => {
                 fontWeight: 'light'
               }}
             >
-              پرداخت‌یار - نسخه ۱.۰.۰
+              سامانت - نسخه ۱.۰.۰
             </Typography>
           </motion.div>
         </Box>
-      </motion.di>
+      </motion.div>
     </Box>
   );
 };

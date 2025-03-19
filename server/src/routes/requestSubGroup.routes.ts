@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/authMiddleware';
-import { requestSubGroupController } from '../controllers/requestSubGoupcontroller';
+import { requestSubGroupController } from '../controllers/requestSubGroup.controller';
 
 const router = Router();
 
