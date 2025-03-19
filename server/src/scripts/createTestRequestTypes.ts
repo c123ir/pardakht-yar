@@ -8,14 +8,73 @@ const prisma = new PrismaClient();
 
 // تنظیمات فیلدهای پیش‌فرض درخواست
 const DEFAULT_FIELD_CONFIG: FieldConfig = {
-  title: { enabled: true, required: true, label: 'عنوان' },
-  description: { enabled: true, required: false, label: 'توضیحات' },
-  amount: { enabled: true, required: false, label: 'مبلغ' },
-  effectiveDate: { enabled: true, required: false, label: 'تاریخ مؤثر' },
-  beneficiaryName: { enabled: true, required: false, label: 'نام ذینفع' },
-  beneficiaryPhone: { enabled: true, required: false, label: 'شماره تماس ذینفع' },
-  contactId: { enabled: true, required: false, label: 'طرف‌حساب' },
-  groupId: { enabled: true, required: false, label: 'گروه' },
+  title: {
+    enabled: true,
+    required: true,
+    label: 'عنوان',
+    order: 1,
+  },
+  description: {
+    enabled: true,
+    required: false,
+    label: 'توضیحات',
+    order: 2,
+  },
+  amount: {
+    enabled: true,
+    required: false,
+    label: 'مبلغ',
+    order: 3,
+  },
+  effectiveDate: {
+    enabled: true,
+    required: false,
+    label: 'تاریخ',
+    order: 4,
+  },
+  status: {
+    enabled: true,
+    required: true,
+    label: 'وضعیت',
+    order: 5,
+    options: []
+  },
+  beneficiaryName: {
+    enabled: true,
+    required: false,
+    label: 'نام ذینفع',
+    order: 6,
+  },
+  beneficiaryPhone: {
+    enabled: true,
+    required: false,
+    label: 'شماره تماس ذینفع',
+    order: 7,
+  },
+  contactId: {
+    enabled: true,
+    required: false,
+    label: 'مخاطب',
+    order: 8,
+  },
+  groupId: {
+    enabled: true,
+    required: false,
+    label: 'گروه',
+    order: 9,
+  },
+  timeField: {
+    enabled: true,
+    required: false,
+    label: 'زمان',
+    order: 10,
+  },
+  toggleField: {
+    enabled: false,
+    required: false,
+    label: 'فیلد بله/خیر',
+    order: 11,
+  }
 };
 
 // انواع درخواست‌های نمونه

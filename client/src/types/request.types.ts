@@ -22,10 +22,20 @@ export interface PaginatedResponse<T> {
 }
 
 // تنظیمات فیلد
+export type RequestStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED' | 'COMPLETED' | 'CANCELED';
+
+export interface StatusOption {
+  value: string;
+  label: string;
+  color?: string;
+}
+
 export interface FieldSetting {
   enabled: boolean;
   required: boolean;
   label: string;
+  order?: number;
+  options?: StatusOption[];
 }
 
 // تنظیمات فیلدهای پیش‌فرض
@@ -38,6 +48,9 @@ export interface FieldConfig {
   beneficiaryPhone: FieldSetting;
   contactId: FieldSetting;
   groupId: FieldSetting;
+  status: FieldSetting;
+  timeField: FieldSetting; // فیلد ساعت
+  toggleField: FieldSetting; // فیلد کلید روشن و خاموش
   [key: string]: FieldSetting; // برای فیلدهای سفارشی
 }
 
@@ -45,12 +58,14 @@ export interface FieldConfig {
 export interface RequestType {
   id: number;
   name: string;
-  description?: string;
+  description: string;
+  iconName: string;
+  color: string;
   isActive: boolean;
   fieldConfig: FieldConfig;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: number;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: number;
 }
 
 // DTO برای ایجاد نوع درخواست جدید
@@ -58,6 +73,8 @@ export interface CreateRequestTypeDto {
   name: string;
   description?: string;
   fieldConfig: FieldConfig;
+  iconName?: string;   // نام آیکون
+  color?: string;      // رنگ رویداد
 }
 
 // DTO برای بروزرسانی نوع درخواست
@@ -66,6 +83,8 @@ export interface UpdateRequestTypeDto {
   description?: string;
   isActive?: boolean;
   fieldConfig?: FieldConfig;
+  iconName?: string;   // نام آیکون
+  color?: string;      // رنگ رویداد
 }
 
 // مدل درخواست
@@ -94,19 +113,11 @@ export interface Request {
   group?: RequestGroup;
   subGroupId?: number;
   subGroup?: RequestSubGroup;
+  timeField?: string;     // فیلد ساعت
+  toggleField?: boolean;  // فیلد کلید روشن و خاموش
   createdAt: string;
   updatedAt: string;
   customFields?: Record<string, any>;
-}
-
-// انواع وضعیت درخواست
-export enum RequestStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
 }
 
 // تایپ برای گروه درخواست
@@ -180,6 +191,8 @@ export interface CreateRequestDto {
   contactId?: number;
   groupId?: number;
   subGroupId?: number;
+  timeField?: string;     // فیلد ساعت
+  toggleField?: boolean;  // فیلد کلید روشن و خاموش
   customFields?: Record<string, any>;
 }
 
@@ -195,5 +208,7 @@ export interface UpdateRequestDto {
   contactId?: number;
   groupId?: number;
   subGroupId?: number;
+  timeField?: string;     // فیلد ساعت
+  toggleField?: boolean;  // فیلد کلید روشن و خاموش
   customFields?: Record<string, any>;
 } 

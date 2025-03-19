@@ -9,63 +9,135 @@ import {
   TextField,
   Grid,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Switch,
   FormControlLabel,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import {
+  Delete as DeleteIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
+} from '@mui/icons-material';
 import { FieldConfig, FieldSetting, RequestType } from '../../types/request.types';
 
 // تنظیمات پیش‌فرض فیلدها
 const DEFAULT_FIELD_CONFIG: FieldConfig = {
-  title: { enabled: true, required: true, label: 'عنوان' },
-  description: { enabled: true, required: false, label: 'توضیحات' },
-  amount: { enabled: true, required: false, label: 'مبلغ' },
-  effectiveDate: { enabled: true, required: false, label: 'تاریخ مؤثر' },
-  beneficiaryName: { enabled: true, required: false, label: 'نام ذینفع' },
-  beneficiaryPhone: { enabled: true, required: false, label: 'شماره تماس ذینفع' },
-  contactId: { enabled: true, required: false, label: 'طرف‌حساب' },
-  groupId: { enabled: true, required: false, label: 'گروه' },
+  title: {
+    enabled: true,
+    required: true,
+    label: 'عنوان',
+    order: 1,
+  },
+  description: {
+    enabled: true,
+    required: false,
+    label: 'توضیحات',
+    order: 2,
+  },
+  amount: {
+    enabled: true,
+    required: false,
+    label: 'مبلغ',
+    order: 3,
+  },
+  effectiveDate: {
+    enabled: true,
+    required: false,
+    label: 'تاریخ',
+    order: 4,
+  },
+  status: {
+    enabled: true,
+    required: true,
+    label: 'وضعیت',
+    order: 5,
+    options: []
+  },
+  beneficiaryName: {
+    enabled: true,
+    required: false,
+    label: 'نام ذینفع',
+    order: 6,
+  },
+  beneficiaryPhone: {
+    enabled: true,
+    required: false,
+    label: 'شماره تماس ذینفع',
+    order: 7,
+  },
+  contactId: {
+    enabled: true,
+    required: false,
+    label: 'مخاطب',
+    order: 8,
+  },
+  groupId: {
+    enabled: true,
+    required: false,
+    label: 'گروه',
+    order: 9,
+  },
+  timeField: {
+    enabled: true,
+    required: false,
+    label: 'زمان',
+    order: 10,
+  },
+  trackingCode: {
+    enabled: true,
+    required: false,
+    label: 'کد پیگیری',
+    order: 11,
+  },
+  comment: {
+    enabled: true,
+    required: false,
+    label: 'یادداشت',
+    order: 12,
+  },
+  attachmentField: {
+    enabled: true,
+    required: false,
+    label: 'پیوست',
+    order: 13,
+  },
+  toggleField: {
+    enabled: false,
+    required: false,
+    label: 'فیلد بله/خیر',
+    order: 14,
+  },
 };
 
 interface RequestTypeEditorProps {
   initialData: RequestType | null;
-  readOnly?: boolean;
-  loading?: boolean;
   onSave: (data: Partial<RequestType>) => void;
+  onCancel: () => void;
 }
 
 const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
   initialData,
-  readOnly = false,
-  loading = false,
   onSave,
+  onCancel,
 }) => {
   // استیت‌های فرم
   const [formData, setFormData] = useState<Partial<RequestType>>({
     name: '',
     description: '',
     isActive: true,
-    fieldConfig: { ...DEFAULT_FIELD_CONFIG },
+    iconName: '',
+    color: '',
+    fieldConfig: DEFAULT_FIELD_CONFIG,
   });
   
   // استیت‌های دیالوگ ویرایش فیلد
-  const [editFieldDialog, setEditFieldDialog] = useState(false);
   const [currentField, setCurrentField] = useState<{ key: string; setting: FieldSetting } | null>(null);
   const [customFields, setCustomFields] = useState<{ [key: string]: FieldSetting }>({});
   const [newFieldKey, setNewFieldKey] = useState('');
-  const [addCustomFieldDialog, setAddCustomFieldDialog] = useState(false);
   
   // استیت‌های اعتبارسنجی
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -109,42 +181,32 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
   }, [initialData]);
 
   // مدیریت تغییر در فیلدهای فرم
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev: Partial<RequestType>) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+  const handleChange = (field: keyof RequestType, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     
     // پاک کردن خطاهای مربوطه
-    if (errors[name]) {
+    if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors[name];
+        delete newErrors[field];
         return newErrors;
       });
     }
   };
 
   // مدیریت تغییر در تنظیمات فیلد
-  const handleFieldSettingChange = (
-    key: string,
-    settingKey: keyof FieldSetting,
-    value: boolean | string
-  ) => {
-    setFormData((prev: Partial<RequestType>) => {
-      const newConfig = { ...prev.fieldConfig } as FieldConfig;
-      
-      if (standardKeys.includes(key)) {
-        newConfig[key as keyof typeof DEFAULT_FIELD_CONFIG] = {
-          ...newConfig[key as keyof typeof DEFAULT_FIELD_CONFIG],
-          [settingKey]: value,
-        };
-      }
-      
+  const handleFieldConfigChange = (field: keyof FieldConfig, setting: Partial<FieldSetting>) => {
+    setFormData((prev) => {
+      const currentConfig = prev.fieldConfig as FieldConfig;
       return {
         ...prev,
-        fieldConfig: newConfig,
+        fieldConfig: {
+          ...currentConfig,
+          [field]: {
+            ...currentConfig[field],
+            ...setting,
+          } as FieldSetting,
+        } as FieldConfig,
       };
     });
   };
@@ -174,12 +236,10 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
         setting: (formData.fieldConfig as FieldConfig)[key as keyof typeof DEFAULT_FIELD_CONFIG],
       });
     }
-    setEditFieldDialog(true);
   };
 
   // بستن دیالوگ ویرایش فیلد
   const handleCloseEditDialog = () => {
-    setEditFieldDialog(false);
     setCurrentField(null);
   };
 
@@ -189,10 +249,12 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     
     const { key, setting } = currentField;
     
-    if (standardKeys.includes(key)) {
-      handleFieldSettingChange(key, 'label', setting.label);
-      handleFieldSettingChange(key, 'enabled', setting.enabled);
-      handleFieldSettingChange(key, 'required', setting.required);
+    if (Object.keys(DEFAULT_FIELD_CONFIG).includes(key)) {
+      handleFieldConfigChange(key as keyof FieldConfig, {
+        label: setting.label,
+        enabled: setting.enabled,
+        required: setting.required,
+      });
     } else {
       handleCustomFieldSettingChange(key, 'label', setting.label);
       handleCustomFieldSettingChange(key, 'enabled', setting.enabled);
@@ -213,13 +275,11 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
 
   // باز کردن دیالوگ افزودن فیلد سفارشی
   const handleOpenAddCustomFieldDialog = () => {
-    setAddCustomFieldDialog(true);
     setNewFieldKey('');
   };
 
   // بستن دیالوگ افزودن فیلد سفارشی
   const handleCloseAddCustomFieldDialog = () => {
-    setAddCustomFieldDialog(false);
     setNewFieldKey('');
   };
 
@@ -230,7 +290,7 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     }
     
     // بررسی تکراری نبودن کلید
-    if (standardKeys.includes(newFieldKey) || customFields[newFieldKey]) {
+    if (Object.keys(DEFAULT_FIELD_CONFIG).includes(newFieldKey) || customFields[newFieldKey]) {
       alert('این کلید قبلاً استفاده شده است. لطفاً کلید دیگری انتخاب کنید.');
       return;
     }
@@ -276,299 +336,142 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
     });
   };
 
-  // لیست کلیدهای استاندارد
-  const standardKeys = Object.keys(DEFAULT_FIELD_CONFIG);
+  const handleMoveField = (field: keyof FieldConfig, direction: 'up' | 'down') => {
+    const fieldConfig = formData.fieldConfig as FieldConfig;
+    const fields = Object.entries(fieldConfig)
+      .map(([key, value]) => ({ key, ...value }))
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const index = fields.findIndex((f) => f.key === field);
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === fields.length - 1)
+    ) {
+      return;
+    }
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const currentOrder = fields[index].order || 0;
+    fields[index].order = fields[newIndex].order || 0;
+    fields[newIndex].order = currentOrder;
+
+    const newFieldConfig = {} as FieldConfig;
+    fields.forEach((field) => {
+      const { key, ...setting } = field;
+      newFieldConfig[key as keyof FieldConfig] = setting as FieldSetting;
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      fieldConfig: newFieldConfig,
+    }));
+  };
+
+  const sortedFields = Object.entries(formData.fieldConfig || {})
+    .map(([key, value]) => ({ key, ...value }))
+    .sort((a, b) => ((a.order as number) || 0) - ((b.order as number) || 0));
 
   return (
-    <Box component="form" id="request-type-form" onSubmit={handleSubmit}>
-      <Grid container spacing={3}>
-        {/* اطلاعات اصلی */}
-        <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>
-            اطلاعات اصلی
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={8}>
+    <Dialog open={true} onClose={onCancel} maxWidth="md" fullWidth>
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>
+          {initialData ? 'ویرایش نوع درخواست' : 'ایجاد نوع درخواست جدید'}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
               <TextField
-                name="name"
-                label="نام نوع درخواست"
-                value={formData.name || ''}
-                onChange={handleChange}
                 fullWidth
+                label="نام"
+                value={formData.name || ''}
+                onChange={(e) => handleChange('name', e.target.value)}
                 required
-                disabled={readOnly || loading}
-                error={Boolean(errors.name)}
-                helperText={errors.name}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    name="isActive"
-                    checked={formData.isActive || false}
-                    onChange={handleChange}
-                    disabled={readOnly || loading}
-                    color="primary"
-                  />
-                }
-                label="فعال"
-              />
-            </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
-                name="description"
+                fullWidth
                 label="توضیحات"
                 value={formData.description || ''}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                rows={3}
-                disabled={readOnly || loading}
-              />
-            </Grid>
-          </Grid>
-        </Grid>
-
-        {/* تنظیمات فیلدها */}
-        <Grid item xs={12}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6">
-              تنظیمات فیلدها
-            </Typography>
-            {!readOnly && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={handleOpenAddCustomFieldDialog}
-                disabled={loading}
-              >
-                افزودن فیلد سفارشی
-              </Button>
-            )}
-          </Box>
-          
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>کلید</TableCell>
-                  <TableCell>برچسب</TableCell>
-                  <TableCell align="center">فعال</TableCell>
-                  <TableCell align="center">الزامی</TableCell>
-                  <TableCell align="center">عملیات</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {/* فیلدهای استاندارد */}
-                {standardKeys.map((key) => {
-                  const setting = (formData.fieldConfig as FieldConfig)[
-                    key as keyof typeof DEFAULT_FIELD_CONFIG
-                  ];
-                  return (
-                    <TableRow key={key}>
-                      <TableCell>{key}</TableCell>
-                      <TableCell>{setting.label}</TableCell>
-                      <TableCell align="center">
-                        <Checkbox
-                          checked={setting.enabled}
-                          disabled={readOnly || loading || (key === 'title')}
-                          onChange={(e) =>
-                            handleFieldSettingChange(key, 'enabled', e.target.checked)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Checkbox
-                          checked={setting.required}
-                          disabled={
-                            readOnly || loading || !setting.enabled || (key === 'title')
-                          }
-                          onChange={(e) =>
-                            handleFieldSettingChange(key, 'required', e.target.checked)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenEditDialog(key)}
-                          disabled={readOnly || loading}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                
-                {/* فیلدهای سفارشی */}
-                {Object.keys(customFields).map((key) => {
-                  const setting = customFields[key];
-                  return (
-                    <TableRow key={key}>
-                      <TableCell>{key}</TableCell>
-                      <TableCell>{setting.label}</TableCell>
-                      <TableCell align="center">
-                        <Checkbox
-                          checked={setting.enabled}
-                          disabled={readOnly || loading}
-                          onChange={(e) =>
-                            handleCustomFieldSettingChange(key, 'enabled', e.target.checked)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Checkbox
-                          checked={setting.required}
-                          disabled={readOnly || loading || !setting.enabled}
-                          onChange={(e) =>
-                            handleCustomFieldSettingChange(key, 'required', e.target.checked)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenEditDialog(key, true)}
-                          disabled={readOnly || loading}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteCustomField(key)}
-                          disabled={readOnly || loading}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                
-                {Object.keys(customFields).length === 0 && Object.keys(formData.fieldConfig || {}).length <= standardKeys.length && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        هیچ فیلد سفارشی تعریف نشده است
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
-      </Grid>
-
-      {/* دیالوگ ویرایش تنظیمات فیلد */}
-      <Dialog open={editFieldDialog} onClose={handleCloseEditDialog}>
-        <DialogTitle>تنظیمات فیلد</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ pt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                label="برچسب فیلد"
-                fullWidth
-                value={currentField?.setting.label || ''}
-                onChange={(e) =>
-                  setCurrentField((prev) =>
-                    prev
-                      ? { ...prev, setting: { ...prev.setting, label: e.target.value } }
-                      : null
-                  )
-                }
+                onChange={(e) => handleChange('description', e.target.value)}
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={currentField?.setting.enabled || false}
-                    onChange={(e) =>
-                      setCurrentField((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              setting: { ...prev.setting, enabled: e.target.checked },
-                            }
-                          : null
-                      )
-                    }
-                    disabled={currentField?.key === 'title'}
-                  />
-                }
-                label="فیلد فعال باشد"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={currentField?.setting.required || false}
-                    onChange={(e) =>
-                      setCurrentField((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              setting: { ...prev.setting, required: e.target.checked },
-                            }
-                          : null
-                      )
-                    }
-                    disabled={
-                      !currentField?.setting.enabled || currentField?.key === 'title'
-                    }
-                  />
-                }
-                label="فیلد الزامی باشد"
-              />
+              <Typography variant="h6" gutterBottom>
+                تنظیمات فیلدها
+              </Typography>
+              {sortedFields.map(({ key, enabled, required, label, order }) => (
+                <Paper key={key} sx={{ p: 2, mb: 2 }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="نام فیلد"
+                        value={label}
+                        onChange={(e) => handleFieldConfigChange(key as keyof FieldConfig, {
+                          label: e.target.value,
+                        })}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={enabled}
+                            onChange={(e) => handleFieldConfigChange(key as keyof FieldConfig, {
+                              enabled: e.target.checked,
+                            })}
+                          />
+                        }
+                        label="فعال"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={required}
+                            onChange={(e) => handleFieldConfigChange(key as keyof FieldConfig, {
+                              required: e.target.checked,
+                            })}
+                          />
+                        }
+                        label="اجباری"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Box display="flex" gap={1}>
+                        <IconButton
+                          onClick={() => handleMoveField(key as keyof FieldConfig, 'up')}
+                          disabled={order === 1}
+                        >
+                          <ArrowUpwardIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleMoveField(key as keyof FieldConfig, 'down')}
+                          disabled={order === sortedFields.length}
+                        >
+                          <ArrowDownwardIcon />
+                        </IconButton>
+                        <IconButton color="error" onClick={() => handleDeleteCustomField(key)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              ))}
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditDialog}>انصراف</Button>
-          <Button onClick={handleSaveFieldSettings} variant="contained" color="primary">
+          <Button onClick={onCancel}>انصراف</Button>
+          <Button type="submit" variant="contained" color="primary">
             ذخیره
           </Button>
         </DialogActions>
-      </Dialog>
-
-      {/* دیالوگ افزودن فیلد سفارشی */}
-      <Dialog open={addCustomFieldDialog} onClose={handleCloseAddCustomFieldDialog}>
-        <DialogTitle>افزودن فیلد سفارشی</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ pt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                label="کلید فیلد (به انگلیسی)"
-                fullWidth
-                value={newFieldKey}
-                onChange={(e) => setNewFieldKey(e.target.value)}
-                helperText="کلید فیلد باید منحصر به فرد و به انگلیسی باشد"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAddCustomFieldDialog}>انصراف</Button>
-          <Button
-            onClick={handleAddCustomField}
-            variant="contained"
-            color="primary"
-            disabled={!newFieldKey.trim()}
-          >
-            افزودن
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      </form>
+    </Dialog>
   );
 };
 

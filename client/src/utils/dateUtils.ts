@@ -38,37 +38,43 @@ export const toGregorian = (jalaliDate: string, formatStr: string = 'yyyy/MM/dd'
 export const formatDateToISO = (date: string | Date): string => {
   if (!date) return '';
   
+  console.log('formatDateToISO input:', date, typeof date);
+  
   // اگر تاریخ به فرمت رشته باشد و احتمالاً شمسی
-  if (typeof date === 'string' && !date.includes('T') && !date.includes('Z')) {
-    // فرض: تاریخ شمسی به فرمت yyyy-MM-dd یا yyyy/MM/dd
-    const formattedDate = date.replace(/\//g, '-');
+  if (typeof date === 'string') {
+    // حذف کاراکترهای اضافی و استاندارد‌سازی فرمت
+    const cleanDate = date.trim().replace(/\//g, '-');
+    
     try {
-      const gregorianDate = toGregorian(formattedDate, 'yyyy-MM-dd');
+      // اگر تاریخ ISO باشد آن را به همان صورت برگردان
+      if (cleanDate.includes('T') || cleanDate.includes('Z')) {
+        const dateObj = new Date(cleanDate);
+        if (isValid(dateObj)) {
+          console.log('Valid ISO date:', dateObj.toISOString());
+          return dateObj.toISOString();
+        }
+      }
+      
+      // تبدیل تاریخ شمسی به میلادی
+      const gregorianDate = toGregorian(cleanDate, 'yyyy-MM-dd');
       if (isValid(gregorianDate)) {
+        console.log('Converted to Gregorian:', gregorianDate.toISOString());
         return gregorianDate.toISOString();
       }
     } catch (e) {
-      console.error('خطا در تبدیل تاریخ شمسی به میلادی:', e);
+      console.error('Error converting date:', e, 'Original date:', date);
     }
   }
   
   // اگر تاریخ از نوع Date باشد
-  if (date instanceof Date) {
+  if (date instanceof Date && isValid(date)) {
+    console.log('Valid Date object:', date.toISOString());
     return date.toISOString();
   }
   
-  // تلاش برای تبدیل مستقیم به ISO
-  try {
-    const dateObj = new Date(date);
-    if (isValid(dateObj)) {
-      return dateObj.toISOString();
-    }
-  } catch (e) {
-    console.error('خطا در تبدیل تاریخ به ISO:', e);
-  }
-  
-  // در صورت خطا، تاریخ اصلی را برگردان
-  return String(date);
+  // در صورت خطا، یک تاریخ پیش‌فرض برگردان (امروز)
+  console.warn('Invalid date format, returning current date:', date);
+  return new Date().toISOString();
 };
 
 /**
@@ -128,7 +134,7 @@ export const formatDateTime = (date: Date | string | number): string => {
   try {
     return toJalali(dateObj, 'yyyy/MM/dd HH:mm');
   } catch (e) {
-    console.error('خطا در فرمت کردن تاریخ و زمان:', e);
+    console.error('Error formatting date and time:', e);
     return '';
   }
 };
@@ -150,7 +156,7 @@ export const formatDate = (date: Date | string | number): string => {
   try {
     return toJalali(dateObj, 'yyyy/MM/dd');
   } catch (e) {
-    console.error('خطا در فرمت کردن تاریخ:', e);
+    console.error('Error formatting date:', e);
     return '';
   }
 };

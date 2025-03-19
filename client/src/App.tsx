@@ -9,8 +9,9 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import rtlPlugin from 'stylis-plugin-rtl';
 import { prefixer } from 'stylis';
+import { SnackbarProvider } from './contexts/SnackbarContext';
 import AppRoutes from './routes';
-import theme from './styles/theme';
+import theme from './theme';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -27,9 +28,11 @@ const App: React.FC = () => {
         <CssBaseline />
         <Router>
           <AuthProvider>
-            <ToastProvider>
-              <AppRoutes />
-            </ToastProvider>
+            <SnackbarProvider>
+              <ToastProvider>
+                <AppRoutes />
+              </ToastProvider>
+            </SnackbarProvider>
           </AuthProvider>
         </Router>
       </ThemeProvider>

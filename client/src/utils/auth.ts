@@ -8,7 +8,52 @@ import { LOCAL_STORAGE_KEYS } from '../config';
  * @returns توکن احراز هویت یا null
  */
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+  const token = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+  
+  // اطمینان از اعتبار توکن
+  if (token && !isTokenValid(token)) {
+    // حذف توکن نامعتبر
+    removeAuthToken();
+    removeUserData();
+    return null;
+  }
+  
+  return token;
+};
+
+/**
+ * بررسی اعتبار توکن JWT
+ * @param token توکن JWT
+ * @returns آیا توکن معتبر است یا خیر
+ */
+export const isTokenValid = (token: string): boolean => {
+  try {
+    // بررسی ساختار توکن
+    if (!token || token.split('.').length !== 3) {
+      console.warn('Invalid token structure');
+      return false;
+    }
+    
+    // استخراج بخش payload توکن
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    
+    // بررسی زمان انقضا
+    if (!payload.exp) {
+      console.warn('Token has no expiration time');
+      return false;
+    }
+    
+    // تبدیل زمان انقضا به میلی‌ثانیه و مقایسه با زمان فعلی
+    const expTime = payload.exp * 1000; // تبدیل به میلی‌ثانیه
+    const currentTime = Date.now();
+    
+    console.log(`Token exp time: ${new Date(expTime).toISOString()}, Current time: ${new Date(currentTime).toISOString()}, Valid: ${expTime > currentTime}`);
+    
+    return expTime > currentTime;
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return false;
+  }
 };
 
 /**

@@ -1,7 +1,7 @@
 // client/src/services/paymentService.ts
 // سرویس مدیریت پرداخت‌ها
 
-import api from './api';
+import axios from '../utils/axios';
 import { 
   PaymentRequest, 
   PaymentFilter, 
@@ -37,7 +37,7 @@ const getPayments = async (filters: PaymentFilter = {
     formattedFilters.page = Number(filters.page);
     formattedFilters.limit = Number(filters.limit);
     
-    const response = await api.get('/payments', { params: formattedFilters });
+    const response = await axios.get('/payments', { params: formattedFilters });
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -51,7 +51,7 @@ const getPayments = async (filters: PaymentFilter = {
  */
 const getPaymentById = async (id: number): Promise<PaymentRequest> => {
   try {
-    const response = await api.get(`/payments/${id}`);
+    const response = await axios.get(`/payments/${id}`);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -66,25 +66,35 @@ const getPaymentById = async (id: number): Promise<PaymentRequest> => {
 const createPayment = async (paymentData: CreatePaymentDto): Promise<PaymentRequest> => {
   try {
     // تبدیل اعداد فارسی به انگلیسی
-    const amount = convertPersianToEnglishNumbers(paymentData.amount.toString());
+    const amount = convertPersianToEnglishNumbers(String(paymentData.amount || ''));
     const beneficiaryPhone = paymentData.beneficiaryPhone ? 
       convertPersianToEnglishNumbers(paymentData.beneficiaryPhone) : 
       undefined;
     
     // تبدیل تاریخ به فرمت ISO
-    const effectiveDate = formatDateToISO(paymentData.effectiveDate);
+    let effectiveDate = '';
+    try {
+      effectiveDate = formatDateToISO(paymentData.effectiveDate);
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      // استفاده از تاریخ امروز در صورت خطا
+      effectiveDate = new Date().toISOString();
+    }
     
     // ایجاد داده‌های پرداخت
     const formattedData = {
       ...paymentData,
-      amount: parseInt(amount),
+      amount: amount ? parseInt(amount) : 0,
       beneficiaryPhone,
       effectiveDate
     };
     
-    const response = await api.post('/payments', formattedData);
+    console.log('Sending payment data:', formattedData);
+    
+    const response = await axios.post('/payments', formattedData);
     return response.data.data;
   } catch (error: any) {
+    console.error('Create payment error:', error.response?.data || error);
     throw new Error(
       error.response?.data?.message || 'خطا در ایجاد درخواست پرداخت'
     );
@@ -114,7 +124,7 @@ const updatePayment = async (id: number, paymentData: UpdatePaymentDto): Promise
       formattedData.effectiveDate = formatDateToISO(formattedData.effectiveDate);
     }
     
-    const response = await api.put(`/payments/${id}`, formattedData);
+    const response = await axios.put(`/payments/${id}`, formattedData);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -128,7 +138,7 @@ const updatePayment = async (id: number, paymentData: UpdatePaymentDto): Promise
  */
 const changePaymentStatus = async (id: number, status: PaymentStatus): Promise<PaymentRequest> => {
   try {
-    const response = await api.patch(`/payments/${id}/status`, { status });
+    const response = await axios.patch(`/payments/${id}/status`, { status });
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -142,7 +152,7 @@ const changePaymentStatus = async (id: number, status: PaymentStatus): Promise<P
  */
 const deletePayment = async (id: number): Promise<void> => {
   try {
-    await api.delete(`/payments/${id}`);
+    await axios.delete(`/payments/${id}`);
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || 'خطا در حذف درخواست پرداخت'
@@ -158,7 +168,7 @@ const uploadPaymentImage = async (paymentId: number, image: File): Promise<Payme
     const formData = new FormData();
     formData.append('image', image);
     
-    const response = await api.post(`/payments/${paymentId}/images`, formData, {
+    const response = await axios.post(`/payments/${paymentId}/images`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -177,7 +187,7 @@ const uploadPaymentImage = async (paymentId: number, image: File): Promise<Payme
  */
 const getPaymentImages = async (paymentId: number): Promise<PaymentImage[]> => {
   try {
-    const response = await api.get(`/payments/${paymentId}/images`);
+    const response = await axios.get(`/payments/${paymentId}/images`);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -191,7 +201,7 @@ const getPaymentImages = async (paymentId: number): Promise<PaymentImage[]> => {
  */
 const deletePaymentImage = async (paymentId: number, imageId: number): Promise<void> => {
   try {
-    await api.delete(`/payments/${paymentId}/images/${imageId}`);
+    await axios.delete(`/payments/${paymentId}/images/${imageId}`);
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || 'خطا در حذف تصویر پرداخت'
@@ -204,7 +214,7 @@ const deletePaymentImage = async (paymentId: number, imageId: number): Promise<v
  */
 const sendPaymentNotification = async (paymentId: number): Promise<any> => {
   try {
-    const response = await api.post(`/payments/${paymentId}/notify`);
+    const response = await axios.post(`/payments/${paymentId}/notify`);
     return response.data;
   } catch (error: any) {
     throw new Error(

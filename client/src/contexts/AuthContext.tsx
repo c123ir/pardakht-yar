@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import { getAuthToken, getUserData, removeAuthToken, removeUserData } from '../utils/auth';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 // تایپ‌های مورد نیاز
 interface User {
@@ -45,16 +45,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       // بررسی وجود توکن در localStorage
-      const token = getAuthToken();
-      console.log('Initial token check:', token);
+      const token = getAuthToken(); // این تابع اکنون اعتبار توکن را نیز بررسی می‌کند
+      console.log('Initial token check:', token ? 'Valid token exists' : 'No valid token');
       
       if (!token) {
         setIsLoading(false);
         return;
       }
-      
-      // تنظیم هدر پیش‌فرض برای axios
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       // ابتدا از داده‌های محلی استفاده می‌کنیم
       const localUserData = getUserData();
@@ -78,6 +75,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     checkAuth();
+    
+    // اضافه کردن بررسی دوره‌ای اعتبار توکن
+    const tokenCheckInterval = setInterval(() => {
+      const token = getAuthToken();
+      // اگر کاربر لاگین است اما توکن معتبر نیست
+      if (user && !token) {
+        console.warn('Token expired during session, logging out...');
+        logout();
+      }
+    }, 60000); // هر دقیقه بررسی کن
+    
+    return () => clearInterval(tokenCheckInterval);
   }, []);
 
   // تابع ورود
@@ -102,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // تابع خروج
   const logout = () => {
     // پاک کردن Authorization هدر
-    delete axios.defaults.headers.common['Authorization'];
+    delete axiosInstance.defaults.headers.common['Authorization'];
     
     // پاک کردن داده‌های localStorage
     removeAuthToken();

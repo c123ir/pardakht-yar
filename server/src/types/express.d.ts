@@ -1,7 +1,9 @@
 // server/src/types/express.d.ts
 // تعریف تایپ‌های سفارشی برای اکسپرس
 
-import { Role } from '@prisma/client';
+import { User } from '@prisma/client';
+
+type Role = 'admin' | 'user' | 'manager';
 
 declare global {
   namespace Express {
@@ -13,7 +15,13 @@ declare global {
     }
 
     interface Request {
-      user: User;
+      user?: {
+        userId: number;
+        username: string;
+        role: Role;
+      };
     }
   }
 }
+
+export {};

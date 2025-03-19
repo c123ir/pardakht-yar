@@ -1,13 +1,13 @@
 // client/src/services/userService.ts
 // سرویس ارتباط با API کاربران
 
-import api from './api';
+import axios from '../utils/axios';
 import { User } from '../types/user.types';
 
 // دریافت لیست کاربران
 const getUsers = async () => {
   try {
-    const response = await api.get('/users');
+    const response = await axios.get('/users');
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -19,7 +19,7 @@ const getUsers = async () => {
 // دریافت اطلاعات یک کاربر
 const getUserById = async (id: number) => {
   try {
-    const response = await api.get(`/users/${id}`);
+    const response = await axios.get(`/users/${id}`);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -31,7 +31,7 @@ const getUserById = async (id: number) => {
 // ایجاد کاربر جدید
 const createUser = async (userData: Partial<User>) => {
   try {
-    const response = await api.post('/users', userData);
+    const response = await axios.post('/users', userData);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -43,7 +43,7 @@ const createUser = async (userData: Partial<User>) => {
 // به‌روزرسانی کاربر
 const updateUser = async (id: number, userData: Partial<User>) => {
   try {
-    const response = await api.put(`/users/${id}`, userData);
+    const response = await axios.put(`/users/${id}`, userData);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -55,7 +55,7 @@ const updateUser = async (id: number, userData: Partial<User>) => {
 // حذف کاربر
 const deleteUser = async (id: number) => {
   try {
-    const response = await api.delete(`/users/${id}`);
+    const response = await axios.delete(`/users/${id}`);
     return response.data;
   } catch (error: any) {
     throw new Error(

@@ -192,6 +192,8 @@ model RequestType {
   name        String    @unique
   description String?
   isActive    Boolean   @default(true)
+  iconName    String?
+  color       String?
   fieldConfig Json
   createdBy   Int
   createdAt   DateTime  @default(now())

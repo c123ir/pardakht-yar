@@ -1,9 +1,8 @@
 // client/src/services/authService.ts
 // سرویس احراز هویت
 
-import axios from 'axios';
-import { API_URL } from '../config';
-import { setAuthToken, getAuthHeader, setUserData, getAuthToken } from '../utils/auth';
+import axios from '../utils/axios';  // استفاده از نمونه axios تنظیم شده
+import { setAuthToken, setUserData, getAuthToken } from '../utils/auth';
 
 // تایپ پاسخ ورود
 interface LoginResponse {
@@ -34,7 +33,7 @@ const login = async (username: string, password: string) => {
   try {
     console.log('Login attempt for:', username);
     
-    const response = await axios.post<LoginResponse>(`${API_URL}/auth/login`, {
+    const response = await axios.post<LoginResponse>(`/auth/login`, {
       username,
       password,
     });
@@ -46,8 +45,8 @@ const login = async (username: string, password: string) => {
     console.log('Login successful, token saved:', response.data.token);
     console.log('Current token after login:', getAuthToken());
     
-    // تنظیم هدر پیش‌فرض برای axios
-    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    // دیگر نیازی به تنظیم هدر پیش‌فرض برای axios نیست
+    // چون این کار در axios.ts از طریق interceptor انجام می‌شود
 
     return {
       user: response.data.user,
@@ -65,11 +64,9 @@ const login = async (username: string, password: string) => {
 const getCurrentUser = async () => {
   try {
     console.log('Getting current user with token:', getAuthToken());
-    console.log('Headers:', getAuthHeader());
     
-    const response = await axios.get<UserResponse>(`${API_URL}/auth/me`, {
-      headers: getAuthHeader(),
-    });
+    // نیازی به ارسال دستی هدر نیست چون interceptor این کار را انجام می‌دهد
+    const response = await axios.get<UserResponse>(`/auth/me`);
     
     return response.data.user;
   } catch (error: any) {

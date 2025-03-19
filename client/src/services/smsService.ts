@@ -1,7 +1,7 @@
 // client/src/services/smsService.ts
 // سرویس ارتباط با API پیامک
 
-import api from './api';
+import axios from '../utils/axios';
 import { convertPersianToEnglishNumbers } from '../utils/stringUtils';
 
 interface SmsSettings {
@@ -27,7 +27,7 @@ interface SmsDeliveryStatus {
 export const smsService = {
   getSettings: async (): Promise<ApiResponse<SmsSettings>> => {
     try {
-      const response = await api.get('/settings/sms');
+      const response = await axios.get('/settings/sms');
       return response.data;
     } catch (error: any) {
       console.error('خطا در دریافت تنظیمات پیامک:', error);
@@ -43,7 +43,7 @@ export const smsService = {
 
   updateSettings: async (settings: SmsSettings): Promise<ApiResponse<SmsSettings>> => {
     try {
-      const response = await api.put('/settings/sms', settings);
+      const response = await axios.put('/settings/sms', settings);
       return response.data;
     } catch (error: any) {
       console.error('خطا در به‌روزرسانی تنظیمات پیامک:', error);
@@ -63,7 +63,7 @@ export const smsService = {
       const convertedTo = convertPersianToEnglishNumbers(to);
       
       // ارسال درخواست
-      const response = await api.post('/settings/sms/test', { to: convertedTo, text });
+      const response = await axios.post('/settings/sms/test', { to: convertedTo, text });
       return response.data;
     } catch (error: any) {
       console.error('خطا در ارسال پیامک آزمایشی:', error);
@@ -80,7 +80,7 @@ export const smsService = {
   
   getSmsDeliveryStatus: async (messageId: string): Promise<ApiResponse<SmsDeliveryStatus>> => {
     try {
-      const response = await api.get(`/settings/sms/delivery/${messageId}`);
+      const response = await axios.get(`/settings/sms/delivery/${messageId}`);
       return response.data;
     } catch (error: any) {
       console.error('خطا در دریافت وضعیت تحویل پیامک:', error);

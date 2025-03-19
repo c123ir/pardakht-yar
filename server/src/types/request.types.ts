@@ -7,11 +7,20 @@ import { PaymentGroup } from './group.types';
 
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED' | 'COMPLETED' | 'CANCELED';
 
+// تنظیمات وضعیت
+export interface StatusOption {
+  value: string;
+  label: string;
+  color?: string;
+}
+
 // تنظیمات فیلد
 export interface FieldSetting {
   enabled: boolean;
   required: boolean;
   label: string;
+  order: number;
+  options?: StatusOption[]; // برای فیلدهای وضعیت
 }
 
 // تنظیمات فیلدهای فرم
@@ -24,6 +33,8 @@ export interface FieldConfig {
   beneficiaryPhone: FieldSetting;
   contactId: FieldSetting;
   groupId: FieldSetting;
+  timeField: FieldSetting;
+  toggleField: FieldSetting;
   [key: string]: FieldSetting; // برای فیلدهای سفارشی
 }
 
@@ -33,6 +44,8 @@ export interface RequestType {
   name: string;
   description?: string;
   isActive: boolean;
+  iconName?: string;
+  color?: string;
   fieldConfig: FieldConfig;
   createdBy: number;
   createdAt: string;
@@ -114,6 +127,8 @@ export interface RequestActivity {
 export interface CreateRequestTypeDto {
   name: string;
   description?: string;
+  iconName?: string;
+  color?: string;
   fieldConfig: FieldConfig;
 }
 
@@ -122,6 +137,8 @@ export interface UpdateRequestTypeDto {
   name?: string;
   description?: string;
   isActive?: boolean;
+  iconName?: string;
+  color?: string;
   fieldConfig?: FieldConfig;
 }
 

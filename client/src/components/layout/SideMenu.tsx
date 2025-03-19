@@ -15,13 +15,15 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import {
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Event as EventIcon,
+} from '@mui/icons-material';
 import PaymentIcon from '@mui/icons-material/Payment';
 import GroupIcon from '@mui/icons-material/Group';
 import ContactsIcon from '@mui/icons-material/Contacts';
-import PeopleIcon from '@mui/icons-material/People';
 import SmsIcon from '@mui/icons-material/Sms';
-import ListAltIcon from '@mui/icons-material/ListAlt';
 import FolderIcon from '@mui/icons-material/Folder';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -78,13 +80,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
 
   // آیتم‌های منوی سیستم درخواست‌ها - برای ادمین و مدیر مالی
   const requestMenuItems = [
-    { text: 'انواع درخواست‌ها', icon: <ListAltIcon />, path: '/request-types' },
     { text: 'گروه‌های درخواست', icon: <FolderIcon />, path: '/request-groups' },
   ];
 
   // آیتم‌های منوی مدیریت - فقط برای ادمین
   const adminMenuItems = [
     { text: 'مدیریت کاربران', icon: <PeopleIcon />, path: '/users' },
+    { text: 'مدیریت رویدادها', icon: <EventIcon />, path: '/request-types' },
     { text: 'تنظیمات پیامک', icon: <SmsIcon />, path: '/settings/sms' },
   ];
 
@@ -119,7 +121,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, toggleDrawer }) => {
         ))}
         
         {/* منوی سیستم درخواست‌ها - برای ادمین و مدیر مالی */}
-        {isAdminOrFinancial && (
+        {isAdminOrFinancial && requestMenuItems.length > 0 && (
           <>
             <Divider sx={{ my: 1 }} />
             <ListItem>
