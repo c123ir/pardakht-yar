@@ -26,7 +26,11 @@ import PrivateRoute from './components/auth/PrivateRoute';
 const theme = createTheme({
   direction: 'rtl',
   typography: {
-    fontFamily: 'IRANSans, Arial, sans-serif',
+    fontFamily: 'IRANSans, Arial',
+    fontWeightLight: 300,
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
+    fontWeightBold: 700,
   },
   palette: {
     mode: 'dark',

@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import AnimatedLogo from './AnimatedLogo';
+import { Link } from 'react-router-dom';
 
 interface SideMenuProps {
   open: boolean;
@@ -117,18 +118,19 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, onClose }) => {
 
       <Divider sx={{ opacity: 0.1 }} />
 
-      <List component={motion.ul} variants={container} initial="hidden" animate="show" >
+      <Box component={motion.div} variants={container} initial="hidden" animate="show">
         {menuItems.map((menuItem) => (
           <React.Fragment key={menuItem.path}>
             <Box
-              component={motion.li}
+              component={motion.div}
               variants={item}
               sx={{ display: 'block', px: 2, py: 0.5 }}
             >
               <ListItem disablePadding>
                 <ListItemButton
+                  component={Link}
+                  to={menuItem.path}
                   selected={location.pathname === menuItem.path}
-                  onClick={() => handleNavigate(menuItem.path)}
                   sx={{
                     borderRadius: '12px',
                     px: 2,
@@ -183,7 +185,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ open, onClose }) => {
             )}
           </React.Fragment>
         ))}
-      </List>
+      </Box>
 
       <Box
         component={motion.div}
