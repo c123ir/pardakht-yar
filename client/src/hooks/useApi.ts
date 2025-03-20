@@ -48,7 +48,7 @@ export function useApi() {
         status: response.status,
       };
       
-      return apiResponse;
+      return apiResponse as unknown as AxiosResponse;
     },
     (error) => {
       // پردازش خطاها

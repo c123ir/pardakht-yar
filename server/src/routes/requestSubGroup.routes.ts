@@ -10,7 +10,10 @@ router.use(authMiddleware);
 // دریافت لیست زیرگروه‌های درخواست
 router.get('/', requestSubGroupController.getAllRequestSubGroups);
 
-// دریافت یک زیرگروه درخواست
+// دریافت زیرگروه‌های یک گروه درخواست
+router.get('/group/:groupId', requestSubGroupController.getRequestSubGroupsByGroupId);
+
+// دریافت یک زیرگروه درخواست با ID
 router.get('/:id', requestSubGroupController.getRequestSubGroupById);
 
 // ایجاد زیرگروه درخواست جدید

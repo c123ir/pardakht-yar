@@ -2,8 +2,10 @@
 // میدل‌ور کنترل دسترسی براساس نقش کاربر
 
 import { Request, Response, NextFunction } from 'express';
-import { Role } from '@prisma/client';
 import { Logger } from '../utils/logger';
+
+// تعریف نوع Role - باید با نوع در express.d.ts یکسان باشد
+type Role = 'ADMIN' | 'FINANCIAL_MANAGER' | 'ACCOUNTANT' | 'SELLER' | 'CEO' | 'PROCUREMENT';
 
 const logger = new Logger('RoleMiddleware');
 
@@ -24,8 +26,8 @@ export const authorize = (allowedRoles: Role[]) => {
       }
 
       // بررسی نقش کاربر
-      if (!allowedRoles.includes(req.user.role)) {
-        logger.warn(`کاربر ${req.user.id} با نقش ${req.user.role} تلاش کرد به منبعی که نیاز به نقش‌های ${allowedRoles.join(', ')} دارد دسترسی پیدا کند`);
+      if (!allowedRoles.includes(req.user.role as Role)) {
+        logger.warn(`کاربر ${req.user.userId} با نقش ${req.user.role} تلاش کرد به منبعی که نیاز به نقش‌های ${allowedRoles.join(', ')} دارد دسترسی پیدا کند`);
         return res.status(403).json({
           success: false,
           message: 'شما مجوز دسترسی به این منبع را ندارید',

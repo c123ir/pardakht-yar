@@ -1,6 +1,5 @@
 import { createTheme } from '@mui/material/styles';
 import { faIR } from '@mui/material/locale';
-import { IranSans } from '../assets/fonts/index';
 
 const theme = createTheme({
   direction: 'rtl',

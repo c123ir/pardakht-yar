@@ -6,12 +6,12 @@ import {
   updateContact,
   deleteContact,
 } from '../controllers/contact.controller';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
 // همه مسیرها نیاز به احراز هویت دارند
-router.use(authenticate);
+router.use(authMiddleware);
 
 // دریافت لیست مخاطبین
 router.get('/', getContacts);

@@ -16,22 +16,7 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { Visibility, VisibilityOff, MailOutline, Lock, Fingerprint } from '@mui/icons-material';
-
-// آیکون‌های فارسی
-const Logo = () => (
-  <svg width="70" height="70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="2" />
-    <path d="M38 65L63 65C67.4183 65 71 61.4183 71 57L71 43C71 38.5817 67.4183 35 63 35L38 35C33.5817 35 30 38.5817 30 43L30 57C30 61.4183 33.5817 65 38 65Z" stroke="currentColor" strokeWidth="2" />
-    <path d="M34 42L48 52L66 42" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const particles = Array.from({ length: 15 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  size: 3 + Math.random() * 15
-}));
+import AnimatedLogo from '../components/layout/AnimatedLogo';
 
 // پالت رنگی جدید
 const colors = {
@@ -48,6 +33,13 @@ const colors = {
   buttonGradientEnd: '#00d2ff',
   errorBg: 'rgba(239, 83, 80, 0.15)'
 };
+
+const particles = Array.from({ length: 15 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: 3 + Math.random() * 15
+}));
 
 const LoginPage: React.FC = () => {
   const theme = useTheme();
@@ -155,57 +147,63 @@ const LoginPage: React.FC = () => {
           }}
         >
           <Fingerprint sx={{ fontSize: 80, filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.7)})` }} />
-          <Typography
-            variant="subtitle1"
-            sx={{
-              color: colors.textPrimary,
-              mt: 2,
-              fontWeight: 'bold',
-              background: `linear-gradient(90deg, ${colors.primary}, ${colors.accent})`,
-              backgroundClip: 'text',
-              textFillColor: 'transparent',
-              filter: `drop-shadow(0 0 5px ${alpha(colors.accent, 0.5)})`,
-            }}
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
           >
-            برای ورود، صفحه را لمس کنید
-          </Typography>
+            <Typography 
+              sx={{ 
+                mt: 2, 
+                color: colors.textSecondary,
+                textAlign: 'center'
+              }}
+            >
+              برای ورود کلیک کنید
+            </Typography>
+          </motion.div>
         </motion.div>
       )}
-
-      {/* پارتیکل‌های متحرک در پس‌زمینه */}
-      {particles.map((particle) => (
-        <Box
+      
+      {/* ذرات متحرک پس‌زمینه */}
+      {particles.map(particle => (
+        <motion.div
           key={particle.id}
-          component={motion.div}
           initial={{ 
-            opacity: 0.3,
             x: `${particle.x}%`, 
-            y: `${particle.y}%` 
+            y: `${particle.y}%`,
+            opacity: Math.random() * 0.5 + 0.3
           }}
           animate={{ 
-            opacity: [0.3, 0.8, 0.3],
-            x: [`${particle.x}%`, `${particle.x + (Math.random() * 10 - 5)}%`],
-            y: [`${particle.y}%`, `${particle.y + (Math.random() * 10 - 5)}%`]
+            x: [
+              `${particle.x}%`, 
+              `${particle.x + (Math.random() * 10 - 5)}%`,
+              `${particle.x}%`
+            ],
+            y: [
+              `${particle.y}%`, 
+              `${particle.y + (Math.random() * 10 - 5)}%`,
+              `${particle.y}%`
+            ],
           }}
           transition={{ 
-            repeat: Infinity, 
-            repeatType: "reverse", 
-            duration: 5 + Math.random() * 10,
+            repeat: Infinity,
+            duration: 3 + Math.random() * 7,
             ease: "easeInOut"
           }}
-          sx={{
+          style={{
             position: 'absolute',
             width: particle.size,
             height: particle.size,
             borderRadius: '50%',
-            background: alpha('#ffffff', 0.2),
-            boxShadow: `0 0 ${particle.size * 2}px ${alpha(colors.accent, 0.5)}`,
-            filter: 'blur(1px)'
+            background: alpha(colors.accent, 0.2),
+            boxShadow: `0 0 ${particle.size / 2}px ${alpha(colors.accent, 0.7)}`,
+            zIndex: 0
           }}
         />
       ))}
-
-      {/* کارت شیشه‌ای لاگین */}
+      
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: mounted ? 1 : 0, y: mounted ? 0 : 50 }}
@@ -269,48 +267,12 @@ const LoginPage: React.FC = () => {
             >
               <Box
                 sx={{
-                  color: colors.accent,
                   mb: 2,
                   filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.5)})`,
-                  animation: 'pulse 3s infinite ease-in-out',
-                  '@keyframes pulse': {
-                    '0%': {
-                      transform: 'scale(1)',
-                      filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.5)})`,
-                    },
-                    '50%': {
-                      transform: 'scale(1.05) rotate(2deg)',
-                      filter: `drop-shadow(0 0 15px ${alpha(colors.accent, 0.7)})`,
-                    },
-                    '100%': {
-                      transform: 'scale(1)',
-                      filter: `drop-shadow(0 0 10px ${alpha(colors.accent, 0.5)})`,
-                    },
-                  },
                 }}
               >
-                <Logo />
+                <AnimatedLogo size="large" colorMode="dark" />
               </Box>
-            </motion.div>
-
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              <Typography 
-                component="h1" 
-                variant="h4" 
-                fontWeight="bold"
-                sx={{
-                  background: `linear-gradient(90deg, ${colors.primary}, ${colors.accent})`,
-                  backgroundClip: 'text',
-                  textFillColor: 'transparent',
-                  mb: 1,
-                }}
-              >
-                سامانت
-              </Typography>
             </motion.div>
 
             <motion.div

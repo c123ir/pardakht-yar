@@ -14,6 +14,7 @@ import {
   Divider,
   ListItemIcon,
   ListItemText,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -23,6 +24,7 @@ import {
   MenuOpen as MenuOpenIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
+  AutoAwesome,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
@@ -32,14 +34,17 @@ interface HeaderProps {
   onToggleSidebar: () => void;
   isDarkMode?: boolean;
   onToggleTheme?: () => void;
+  open?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
   onToggleSidebar,
   isDarkMode = true,
   onToggleTheme,
+  open = true,
 }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null);
@@ -82,6 +87,7 @@ const Header: React.FC<HeaderProps> = ({
         background: alpha(theme.palette.background.paper, 0.7),
         backdropFilter: 'blur(10px)',
         borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        width: '100%',
       }}
     >
       <Toolbar 
@@ -102,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({
             onClick={onToggleSidebar}
             edge="start"
             sx={{ 
-              mr: 1,
+              ml: 1,
               color: theme.palette.text.primary,
               background: alpha(theme.palette.primary.main, 0.1),
               borderRadius: '12px',
@@ -113,17 +119,19 @@ const Header: React.FC<HeaderProps> = ({
               }
             }}
           >
-            <MenuOpenIcon />
+            <MenuOpenIcon sx={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }} />
           </IconButton>
           
-          <Box 
-            component={motion.div}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            sx={{ cursor: 'pointer' }}
-          >
-            <AnimatedLogo size="small" colorMode={isDarkMode ? 'dark' : 'light'} />
-          </Box>
+          {!isMobile && (
+            <Box 
+              component={motion.div}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              sx={{ cursor: 'pointer' }}
+            >
+              <AnimatedLogo size="small" colorMode={isDarkMode ? 'dark' : 'light'} />
+            </Box>
+          )}
         </Box>
 
         {/* سمت چپ - پروفایل و تنظیمات */}
@@ -134,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({
               <IconButton 
                 onClick={onToggleTheme}
                 sx={{ 
-                  ml: 1,
+                  mr: 1,
                   color: theme.palette.text.primary,
                   background: alpha(theme.palette.background.paper, 0.2),
                   borderRadius: '12px',
@@ -157,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({
             <IconButton 
               onClick={handleNotificationsOpen}
               sx={{ 
-                ml: 1,
+                mr: 1,
                 color: theme.palette.text.primary,
                 background: alpha(theme.palette.background.paper, 0.2),
                 borderRadius: '12px',
@@ -208,8 +216,8 @@ const Header: React.FC<HeaderProps> = ({
                 }
               }
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
           >
             {notifications.map((notification, index) => (
               <React.Fragment key={notification.id}>
@@ -218,7 +226,7 @@ const Header: React.FC<HeaderProps> = ({
                   sx={{ 
                     py: 1.5, 
                     px: 2,
-                    borderLeft: notification.read ? 'none' : `3px solid ${theme.palette.primary.main}`,
+                    borderRight: notification.read ? 'none' : `3px solid ${theme.palette.primary.main}`,
                     background: notification.read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
                     '&:hover': {
                       background: alpha(theme.palette.primary.main, 0.1),
@@ -231,7 +239,8 @@ const Header: React.FC<HeaderProps> = ({
                         primary={notification.title}
                         primaryTypographyProps={{ 
                           fontSize: '0.9rem',
-                          fontWeight: notification.read ? 'normal' : 'bold'
+                          fontWeight: notification.read ? 'normal' : 'bold',
+                          textAlign: 'right'
                         }}
                       />
                     </Box>
@@ -240,60 +249,64 @@ const Header: React.FC<HeaderProps> = ({
                         secondary={notification.time}
                         secondaryTypographyProps={{ 
                           fontSize: '0.75rem',
-                          color: theme.palette.text.secondary
+                          color: theme.palette.text.secondary,
+                          textAlign: 'right'
                         }}
                       />
                     </Box>
                   </Box>
                 </MenuItem>
-                {index < notifications.length - 1 && <Divider />}
+                {index < notifications.length - 1 && (
+                  <Divider sx={{ opacity: 0.1 }} />
+                )}
               </React.Fragment>
             ))}
           </Menu>
           
-          {/* پروفایل */}
-          <Box 
-            component={motion.div}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            sx={{ ml: 1 }}
-          >
-            <Tooltip title="پروفایل کاربری">
-              <IconButton 
-                onClick={handleMenu}
+          {/* آواتار کاربر */}
+          <Tooltip title="پروفایل">
+            <IconButton
+              onClick={handleMenu}
+              sx={{
+                mr: 1,
+                width: 40,
+                height: 40,
+                p: 0,
+                background: alpha(theme.palette.primary.main, 0.1),
+                '&:hover': {
+                  background: alpha(theme.palette.primary.main, 0.2),
+                },
+                borderRadius: '12px',
+                overflow: 'hidden',
+              }}
+            >
+              <Avatar 
                 sx={{ 
-                  padding: 0,
-                  border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                  borderRadius: '14px',
-                  overflow: 'hidden',
-                  transition: 'all 0.2s ease',
+                  width: 36, 
+                  height: 36,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                  }
                 }}
               >
-                <Avatar 
-                  alt={user?.username || 'کاربر'} 
-                  src="/avatar.jpg"
-                  sx={{ 
-                    width: 40, 
-                    height: 40,
-                    background: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
-                  }}
-                >
-                  {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                </Avatar>
-              </IconButton>
-            </Tooltip>
-          </Box>
+                {user?.fullName?.charAt(0) || 'U'}
+              </Avatar>
+            </IconButton>
+          </Tooltip>
           
           {/* منوی پروفایل */}
           <Menu
             anchorEl={anchorEl}
+            id="account-menu"
             open={Boolean(anchorEl)}
             onClose={handleClose}
+            transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
             PaperProps={{
               sx: {
                 mt: 1.5,
-                width: 200,
+                width: 220,
                 background: alpha(theme.palette.background.paper, 0.9),
                 backdropFilter: 'blur(8px)',
                 borderRadius: '12px',
@@ -302,8 +315,6 @@ const Header: React.FC<HeaderProps> = ({
                 border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
               }
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
             <MenuItem onClick={handleClose} sx={{ py: 1.5 }}>
               <ListItemIcon>

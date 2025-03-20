@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
-import { logger } from '../utils/logger';
+import { Logger } from '../utils/logger';
+
+const logger = new Logger('GroupController');
 
 // دریافت لیست گروه‌ها
 export const getAllGroups = async (req: Request, res: Response) => {
   try {
-    const groups = await prisma.Group.findMany({
+    const groups = await prisma.paymentGroup.findMany({
       include: {
-        contacts: true,
+        members: true,
       },
     });
     res.json({ success: true, data: groups });
@@ -21,10 +23,10 @@ export const getAllGroups = async (req: Request, res: Response) => {
 export const getGroupById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const group = await prisma.Group.findUnique({
+    const group = await prisma.paymentGroup.findUnique({
       where: { id: parseInt(id) },
       include: {
-        contacts: true,
+        members: true,
       },
     });
     
@@ -43,13 +45,20 @@ export const getGroupById = async (req: Request, res: Response) => {
 export const createGroup = async (req: Request, res: Response) => {
   try {
     const { name, description } = req.body;
-    const group = await prisma.Group.create({
+    
+    // اطمینان از وجود req.user
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({ success: false, message: 'احراز هویت ناموفق' });
+    }
+    
+    const group = await prisma.paymentGroup.create({
       data: {
-        name,
+        title: name,
         description,
+        creatorId: req.user.userId,
       },
       include: {
-        contacts: true,
+        members: true,
       },
     });
     res.status(201).json({ success: true, data: group });
@@ -64,14 +73,14 @@ export const updateGroup = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-    const group = await prisma.Group.update({
+    const group = await prisma.paymentGroup.update({
       where: { id: parseInt(id) },
       data: {
-        name,
+        title: name,
         description,
       },
       include: {
-        contacts: true,
+        members: true,
       },
     });
     res.json({ success: true, data: group });
@@ -85,7 +94,7 @@ export const updateGroup = async (req: Request, res: Response) => {
 export const deleteGroup = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await prisma.Group.delete({
+    await prisma.paymentGroup.delete({
       where: { id: parseInt(id) },
     });
     res.json({ success: true, message: 'گروه با موفقیت حذف شد' });

@@ -2,14 +2,18 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { Logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const logger = new Logger('AuthController');
 
 // ورود کاربر
 export const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
+    
+    logger.info(`Login attempt for: ${username}`);
 
     // بررسی وجود کاربر
     const user = await prisma.user.findUnique({
@@ -17,6 +21,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (!user) {
+      logger.warn(`Failed login: User not found - ${username}`);
       return res.status(401).json({
         status: 'error',
         message: 'نام کاربری یا رمز عبور اشتباه است',
@@ -26,6 +31,7 @@ export const login = async (req: Request, res: Response) => {
     // بررسی رمز عبور
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      logger.warn(`Failed login: Invalid password for user ${username}`);
       return res.status(401).json({
         status: 'error',
         message: 'نام کاربری یا رمز عبور اشتباه است',
@@ -34,7 +40,11 @@ export const login = async (req: Request, res: Response) => {
 
     // ایجاد توکن
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { 
+        userId: user.id, 
+        username: user.username,
+        role: user.role  // اضافه کردن نقش کاربر به توکن
+      },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -45,6 +55,8 @@ export const login = async (req: Request, res: Response) => {
       data: { lastLogin: new Date() },
     });
 
+    logger.info(`Successful login: ${username}`);
+    
     // ارسال پاسخ
     res.json({
       status: 'success',
@@ -59,7 +71,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({
       status: 'error',
       message: 'خطا در ورود به سیستم',
@@ -72,12 +84,15 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { username, password, fullName, role } = req.body;
 
+    logger.info(`Registration attempt for: ${username}`);
+
     // بررسی تکراری نبودن نام کاربری
     const existingUser = await prisma.user.findUnique({
       where: { username },
     });
 
     if (existingUser) {
+      logger.warn(`Registration failed: Username ${username} already exists`);
       return res.status(400).json({
         status: 'error',
         message: 'این نام کاربری قبلاً ثبت شده است',
@@ -100,10 +115,16 @@ export const register = async (req: Request, res: Response) => {
 
     // ایجاد توکن
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { 
+        userId: user.id, 
+        username: user.username,
+        role: user.role
+      },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
+
+    logger.info(`Registration successful for: ${username}`);
 
     // ارسال پاسخ
     res.status(201).json({
@@ -119,7 +140,7 @@ export const register = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Register error:', error);
+    logger.error('Register error:', error);
     res.status(500).json({
       status: 'error',
       message: 'خطا در ثبت‌نام',
@@ -133,11 +154,14 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     const userId = req.user?.userId;
     
     if (!userId) {
+      logger.warn('Get current user: No authenticated user');
       return res.status(401).json({
         status: 'error',
         message: 'کاربر احراز هویت نشده است',
       });
     }
+
+    logger.info(`Getting current user info for user ID: ${userId}`);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -151,6 +175,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     });
 
     if (!user) {
+      logger.warn(`User with ID ${userId} not found`);
       return res.status(404).json({
         status: 'error',
         message: 'کاربر یافت نشد',
@@ -162,7 +187,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       data: user,
     });
   } catch (error) {
-    console.error('Get current user error:', error);
+    logger.error('Get current user error:', error);
     res.status(500).json({
       status: 'error',
       message: 'خطا در دریافت اطلاعات کاربر',

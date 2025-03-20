@@ -1,23 +1,23 @@
 import { Router } from 'express';
 import {
-  getGroups,
-  getGroup,
+  getAllGroups,
+  getGroupById,
   createGroup,
   updateGroup,
-  deleteGroup,
+  deleteGroup
 } from '../controllers/group.controller';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
 // همه مسیرها نیاز به احراز هویت دارند
-router.use(authenticate);
+router.use(authMiddleware);
 
 // دریافت لیست گروه‌ها
-router.get('/', getGroups);
+router.get('/', getAllGroups);
 
 // دریافت اطلاعات یک گروه
-router.get('/:id', getGroup);
+router.get('/:id', getGroupById);
 
 // ایجاد گروه جدید
 router.post('/', createGroup);

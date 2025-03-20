@@ -33,11 +33,18 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; username: string; role: string };
 
+    // بررسی معتبر بودن نقش کاربر
+    const validRoles = ['ADMIN', 'FINANCIAL_MANAGER', 'ACCOUNTANT', 'SELLER', 'CEO', 'PROCUREMENT'];
+    if (!validRoles.includes(decoded.role)) {
+      logger.warn(`نقش نامعتبر در توکن: ${decoded.role}`);
+      return res.status(401).json({ message: 'احراز هویت ناموفق: نقش کاربری معتبر نیست' });
+    }
+
     // تنظیم اطلاعات کاربر در شیء درخواست
     req.user = {
       userId: decoded.userId,
       username: decoded.username,
-      role: decoded.role as string
+      role: decoded.role as any // تبدیل موقت برای حل مشکل تایپ اسکریپت
     };
 
     // ادامه درخواست

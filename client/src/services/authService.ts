@@ -5,14 +5,16 @@ import axios from '../utils/axios';  // استفاده از نمونه axios ت�
 import { setAuthToken, setUserData, getAuthToken } from '../utils/auth';
 
 // تایپ پاسخ ورود
-interface LoginResponse {
-  success: boolean;
-  token: string;
-  user: {
-    id: number;
-    username: string;
-    fullName: string;
-    role: string;
+interface ApiResponse {
+  status: string;
+  data: {
+    token: string;
+    user: {
+      id: number;
+      username: string;
+      fullName: string;
+      role: string;
+    };
   };
 }
 
@@ -33,25 +35,35 @@ const login = async (username: string, password: string) => {
   try {
     console.log('Login attempt for:', username);
     
-    const response = await axios.post<LoginResponse>(`/auth/login`, {
+    const response = await axios.post<ApiResponse>(`/auth/login`, {
       username,
       password,
     });
 
-    // ذخیره توکن و اطلاعات کاربر
-    setAuthToken(response.data.token);
-    setUserData(response.data.user);
-
-    console.log('Login successful, token saved:', response.data.token);
-    console.log('Current token after login:', getAuthToken());
+    console.log('Raw login response:', response.data);
     
-    // دیگر نیازی به تنظیم هدر پیش‌فرض برای axios نیست
-    // چون این کار در axios.ts از طریق interceptor انجام می‌شود
+    // ذخیره توکن و اطلاعات کاربر
+    if (response.data.status === 'success' && response.data.data) {
+      const { token, user } = response.data.data;
+      
+      if (!token) {
+        console.error('No token received in the response');
+        throw new Error('توکن احراز هویت دریافت نشد');
+      }
+      
+      setAuthToken(token);
+      setUserData(user);
 
-    return {
-      user: response.data.user,
-      token: response.data.token,
-    };
+      console.log('Login successful, token saved:', token);
+      console.log('Current token after login:', getAuthToken());
+      
+      return {
+        user,
+        token,
+      };
+    } else {
+      throw new Error('ساختار پاسخ API نامعتبر است');
+    }
   } catch (error: any) {
     console.error('Login error:', error.response || error);
     throw new Error(
@@ -66,9 +78,13 @@ const getCurrentUser = async () => {
     console.log('Getting current user with token:', getAuthToken());
     
     // نیازی به ارسال دستی هدر نیست چون interceptor این کار را انجام می‌دهد
-    const response = await axios.get<UserResponse>(`/auth/me`);
+    const response = await axios.get(`/auth/me`);
     
-    return response.data.user;
+    if (response.data.status === 'success' && response.data.data) {
+      return response.data.data;
+    } else {
+      throw new Error('ساختار پاسخ API نامعتبر است');
+    }
   } catch (error: any) {
     console.error('Get current user error:', error.response || error);
     throw new Error(

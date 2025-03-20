@@ -95,12 +95,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const { user: userData } = await authService.login(username, password);
+      const authResult = await authService.login(username, password);
       
-      setUser(userData);
-      navigate('/dashboard');
+      if (authResult && authResult.user) {
+        setUser(authResult.user);
+        navigate('/dashboard');
+      } else {
+        throw new Error('اطلاعات کاربر دریافت نشد');
+      }
     } catch (err: any) {
       const errorMessage = err.message || 'خطا در ورود به سیستم';
+      console.error('Login error in AuthContext:', errorMessage);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

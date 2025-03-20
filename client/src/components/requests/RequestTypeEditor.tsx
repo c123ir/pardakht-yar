@@ -135,7 +135,7 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
   });
   
   // استیت‌های دیالوگ ویرایش فیلد
-  const [currentField, setCurrentField] = useState<{ key: string; setting: FieldSetting } | null>(null);
+  // حذف: const [currentField, setCurrentField] = useState<{ key: string; setting: FieldSetting } | null>(null);
   const [customFields, setCustomFields] = useState<{ [key: string]: FieldSetting }>({});
   
   // استیت‌های اعتبارسنجی
@@ -208,26 +208,6 @@ const RequestTypeEditor: React.FC<RequestTypeEditorProps> = ({
         } as FieldConfig,
       };
     });
-  };
-
-  // مدیریت تغییر در فیلدهای سفارشی
-  const handleCustomFieldSettingChange = (
-    key: string,
-    settingKey: keyof FieldSetting,
-    value: boolean | string
-  ) => {
-    setCustomFields((prev) => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        [settingKey]: value,
-      },
-    }));
-  };
-
-  // بستن دیالوگ ویرایش فیلد
-  const handleCloseEditDialog = () => {
-    setCurrentField(null);
   };
 
   // حذف فیلد سفارشی

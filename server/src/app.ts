@@ -9,16 +9,15 @@ import compression from 'compression';
 import path from 'path';
 import config from './config/app';
 import logger from './config/logger';
-import authRoutes from './routes/authRoutes';
-import userRoutes from './routes/userRoutes';
-import settingRoutes from './routes/settingRoutes';
-import contactRoutes from './routes/contactRoutes'; // اضافه کردن مسیرهای طرف‌حساب‌ها
-import paymentRoutes from './routes/paymentRoutes'; // اضافه کردن مسیرهای پرداخت‌ها
-import requestTypeRoutes from './routes/requestTypeRoutes'; // اضافه کردن مسیرهای انواع درخواست‌ها
-import requestRoutes from './routes/requestRoutes'; // اضافه کردن مسیرهای درخواست‌ها
-import requestGroupRoutes from './routes/requestGroupRoutes'; // اضافه کردن مسیرهای گروه‌های درخواست
-import requestSubGroupRoutes from './routes/requestSubGroupRoutes'; // اضافه کردن مسیرهای زیرگروه‌های درخواست
-import { errorHandler, notFound } from './middleware/error';
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import contactRoutes from './routes/contact.routes';
+import paymentRoutes from './routes/payment.routes';
+import requestTypeRoutes from './routes/requestType.routes';
+import requestRoutes from './routes/request.routes';
+import requestGroupRoutes from './routes/requestGroup.routes';
+import requestSubGroupRoutes from './routes/requestSubGroup.routes';
+import { errorHandler, notFound } from './middleware/errorHandler';
 
 // ایجاد اپلیکیشن Express
 const app: Express = express();
@@ -50,13 +49,12 @@ app.use(
 // مسیرهای API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/settings', settingRoutes);
-app.use('/api/contacts', contactRoutes); // اضافه کردن مسیرهای طرف‌حساب‌ها
-app.use('/api/payments', paymentRoutes); // اضافه کردن مسیرهای پرداخت‌ها
-app.use('/api/request-types', requestTypeRoutes); // اضافه کردن مسیرهای انواع درخواست‌ها
-app.use('/api/requests', requestRoutes); // اضافه کردن مسیرهای درخواست‌ها
-app.use('/api/request-groups', requestGroupRoutes); // اضافه کردن مسیرهای گروه‌های درخواست
-app.use('/api/request-sub-groups', requestSubGroupRoutes); // اضافه کردن مسیرهای زیرگروه‌های درخواست
+app.use('/api/contacts', contactRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/request-types', requestTypeRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/request-groups', requestGroupRoutes);
+app.use('/api/request-sub-groups', requestSubGroupRoutes);
 
 // صفحه اصلی API
 app.get('/api', (req: Request, res: Response) => {

@@ -22,6 +22,10 @@ import SettingsPage from './pages/SettingsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/auth/PrivateRoute';
 
+// کامپوننت‌های اضافی
+import { ToastProvider } from './contexts/ToastContext';
+import { SnackbarProvider } from './contexts/SnackbarContext';
+
 // ایجاد تم سفارشی
 const theme = createTheme({
   direction: 'rtl',
@@ -63,6 +67,22 @@ const theme = createTheme({
         },
       },
     },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          direction: 'rtl',
+          margin: 0,
+          padding: 0,
+        },
+        '*': {
+          boxSizing: 'border-box',
+        },
+        '#root': {
+          direction: 'rtl',
+          minHeight: '100vh',
+        },
+      },
+    },
   },
 });
 
@@ -70,28 +90,33 @@ const theme = createTheme({
 const cacheRtl = createCache({
   key: 'muirtl',
   stylisPlugins: [prefixer, rtlPlugin],
+  prepend: true,
 });
 
 function App() {
   return (
     <CacheProvider value={cacheRtl}>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route element={<PrivateRoute element={<Layout />} />}>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/requests" element={<RequestsPage />} />
-                <Route path="/request-types" element={<RequestTypesPage />} />
-                <Route path="/payments" element={<PaymentsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Route>
-            </Routes>
-          </AuthProvider>
-        </Router>
+        <CssBaseline enableColorScheme />
+        <SnackbarProvider>
+          <ToastProvider>
+            <Router>
+              <AuthProvider>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route element={<PrivateRoute element={<Layout />} />}>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/requests" element={<RequestsPage />} />
+                    <Route path="/request-types" element={<RequestTypesPage />} />
+                    <Route path="/payments" element={<PaymentsPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                  </Route>
+                </Routes>
+              </AuthProvider>
+            </Router>
+          </ToastProvider>
+        </SnackbarProvider>
       </ThemeProvider>
     </CacheProvider>
   );

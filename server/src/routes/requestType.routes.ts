@@ -6,12 +6,12 @@ import {
   updateRequestType,
   deleteRequestType,
 } from '../controllers/requestType.controller';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 
 // همه مسیرها نیاز به احراز هویت دارند
-router.use(authenticate);
+router.use(authMiddleware);
 
 // دریافت لیست انواع درخواست
 router.get('/', getRequestTypes);

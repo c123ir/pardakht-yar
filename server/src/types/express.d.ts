@@ -3,7 +3,7 @@
 
 import { User } from '@prisma/client';
 
-type Role = 'admin' | 'user' | 'manager';
+type Role = 'ADMIN' | 'FINANCIAL_MANAGER' | 'ACCOUNTANT' | 'SELLER' | 'CEO' | 'PROCUREMENT';
 
 declare global {
   namespace Express {

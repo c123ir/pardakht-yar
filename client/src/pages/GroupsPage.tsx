@@ -6,7 +6,6 @@ import {
   Box, 
   Typography, 
   Button, 
-  Paper, 
   Grid, 
   Card, 
   CardContent, 
@@ -30,7 +29,6 @@ import {
   Delete as DeleteIcon,
   People as PeopleIcon,
   Visibility as VisibilityIcon,
-  Payments as PaymentsIcon,
   Event as EventIcon,
   MoreVert as MoreVertIcon
 } from '@mui/icons-material';
@@ -151,7 +149,7 @@ const GroupsPage: React.FC = () => {
             }}
           >
             مدیریت گروه‌ها و رویدادها
-          </Typography>
+        </Typography>
         </Box>
         
         <Button
@@ -375,7 +373,7 @@ const GroupsPage: React.FC = () => {
           {selectedGroup ? <EditIcon color="warning" /> : <AddIcon color="primary" />}
           <Typography fontWeight="bold">
             {selectedGroup ? 'ویرایش گروه' : 'ایجاد گروه جدید'}
-          </Typography>
+        </Typography>
         </DialogTitle>
         
         <DialogContent sx={{ pt: 3 }}>

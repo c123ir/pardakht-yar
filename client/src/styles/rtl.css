@@ -1,0 +1,67 @@
+/* RTL Overrides for Material-UI */
+
+/* تنظیمات کلی */
+:root {
+  direction: rtl;
+}
+
+html, body, #root {
+  direction: rtl;
+}
+
+/* تنظیمات Material UI */
+.MuiDrawer-paper {
+  direction: rtl !important;
+}
+
+.MuiList-root {
+  direction: rtl !important;
+}
+
+.MuiListItemIcon-root {
+  margin-left: 16px !important;
+  margin-right: 0 !important;
+}
+
+.MuiListItemText-root {
+  text-align: right !important;
+}
+
+.MuiFormControl-root {
+  direction: rtl !important;
+}
+
+.MuiInputBase-root {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.MuiInputLabel-root {
+  right: 0 !important;
+  left: auto !important;
+  transform-origin: right top !important;
+}
+
+.MuiButton-root {
+  direction: rtl !important;
+}
+
+.MuiButtonBase-root {
+  direction: rtl !important;
+}
+
+/* برای سایدبار */
+.MuiDrawer-root.MuiDrawer-docked .MuiDrawer-paper {
+  right: 0 !important;
+  left: auto !important;
+}
+
+/* برای منوها */
+.MuiMenu-paper {
+  direction: rtl !important;
+}
+
+/* برای دیالوگ‌ها */
+.MuiDialog-paper {
+  direction: rtl !important;
+} 

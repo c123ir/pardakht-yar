@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -31,7 +32,7 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 // دریافت اطلاعات یک کاربر
-export const getUser = async (req: Request, res: Response) => {
+export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -67,18 +68,76 @@ export const getUser = async (req: Request, res: Response) => {
   }
 };
 
+// ایجاد کاربر جدید
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const { username, password, fullName, role } = req.body;
+
+    // بررسی تکراری نبودن نام کاربری
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'این نام کاربری قبلاً ثبت شده است',
+      });
+    }
+
+    // رمزنگاری کلمه عبور
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // ایجاد کاربر جدید
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        fullName,
+        role,
+      },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: newUser,
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'خطا در ایجاد کاربر جدید',
+    });
+  }
+};
+
 // به‌روزرسانی اطلاعات کاربر
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { fullName, role } = req.body;
+    const { fullName, role, password } = req.body;
+
+    // اگر کلمه عبور ارسال شده باشد، رمزنگاری انجام شود
+    let updateData: any = { fullName, role };
+    
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      updateData.password = hashedPassword;
+    }
 
     const user = await prisma.user.update({
       where: { id: parseInt(id) },
-      data: {
-        fullName,
-        role,
-      },
+      data: updateData,
       select: {
         id: true,
         username: true,

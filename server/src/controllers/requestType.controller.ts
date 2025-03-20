@@ -61,6 +61,14 @@ export const getRequestType = async (req: Request, res: Response) => {
 export const createRequestType = async (req: Request, res: Response) => {
   try {
     const { name, description, iconName, color, fieldConfig, isActive = true } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'احراز هویت انجام نشده است',
+      });
+    }
 
     const requestType = await prisma.requestType.create({
       data: {
@@ -70,6 +78,9 @@ export const createRequestType = async (req: Request, res: Response) => {
         color,
         fieldConfig,
         isActive,
+        creator: {
+          connect: { id: userId }
+        }
       },
     });
 
