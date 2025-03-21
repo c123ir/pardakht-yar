@@ -9,6 +9,7 @@ export interface User {
   fullName: string;
   email?: string;
   phone?: string;
+  avatar?: string;
   role: Role;
   isActive: boolean;
   lastLogin?: Date;
@@ -22,6 +23,7 @@ export interface CreateUserInput {
   fullName: string;
   email?: string;
   phone?: string;
+  avatar?: string;
   role: Role;
   isActive?: boolean;
 }
@@ -32,6 +34,7 @@ export interface UpdateUserInput {
   fullName?: string;
   email?: string;
   phone?: string;
+  avatar?: string;
   role?: Role;
   isActive?: boolean;
 }

@@ -29,6 +29,8 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Avatar,
+  useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -37,8 +39,13 @@ import { User, Role, CreateUserInput, UpdateUserInput } from '../types/user.type
 import userService from '../services/userService';
 import { useAuth } from '../hooks/useAuth';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { convertPersianToEnglishNumbers } from '../utils/stringUtils';
+import AvatarUploader from '../components/avatar/AvatarUploader';
+import { useImages } from '../contexts/ImageContext';
+import UserAvatar from '../components/common/UserAvatar';
 
 const UsersPage: React.FC = () => {
+  const theme = useTheme();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,11 +68,20 @@ const UsersPage: React.FC = () => {
     message: '',
     type: 'success',
   });
+  const { getImageUrl } = useImages();
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
 
   // بارگذاری لیست کاربران
   useEffect(() => {
     fetchUsers();
   }, []);
+  
+  // رفرش تصویر آواتار هنگام باز شدن دیالوگ ویرایش
+  useEffect(() => {
+    if (openDialog && dialogMode === 'edit') {
+      setAvatarRefreshKey(prev => prev + 1);
+    }
+  }, [openDialog, dialogMode]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -120,10 +136,20 @@ const UsersPage: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setUserInput((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // تبدیل اعداد فارسی به انگلیسی برای شماره موبایل
+    if (name === 'phone') {
+      const convertedValue = convertPersianToEnglishNumbers(value);
+      setUserInput((prev) => ({
+        ...prev,
+        [name]: convertedValue,
+      }));
+    } else {
+      setUserInput((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
@@ -231,6 +257,58 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  // تغییر آواتار کاربر
+  const handleAvatarChange = async (avatarPath: string) => {
+    // به‌روزرسانی state فرم
+    setUserInput((prev) => ({
+      ...prev,
+      avatar: avatarPath,
+    }));
+
+    // اگر در حالت ویرایش هستیم و کاربری انتخاب شده است
+    if (dialogMode === 'edit' && selectedUser) {
+      try {
+        // به‌روزرسانی فوری اطلاعات کاربر در سرور
+        const userDataToUpdate = { avatar: avatarPath };
+        const updatedUser = await userService.updateUser(selectedUser.id, userDataToUpdate);
+        
+        // به‌روزرسانی لیست کاربران
+        setUsers((prev) =>
+          prev.map((u) => (u.id === selectedUser.id ? { ...u, ...updatedUser } : u))
+        );
+        
+        // رفرش تصاویر آواتار
+        setAvatarRefreshKey(prev => prev + 1);
+        
+        // به‌روزرسانی اطلاعات کاربر انتخاب شده
+        setSelectedUser(prev => prev ? { ...prev, avatar: avatarPath } : null);
+        
+        // تاخیر کوتاه برای اطمینان از به‌روزرسانی UI
+        setTimeout(() => {
+          // نمایش پیام موفقیت
+          setToast({
+            open: true,
+            message: 'تصویر کاربر با موفقیت به‌روزرسانی شد',
+            type: 'success',
+          });
+        }, 500);
+      } catch (err) {
+        console.error('خطا در به‌روزرسانی آواتار:', err);
+        setToast({
+          open: true,
+          message: (err as Error).message,
+          type: 'error',
+        });
+      }
+    }
+  };
+
+  // اضافه کردن پارامتر refresh به URL آواتار
+  const getAvatarUrl = (relativePath: string | null | undefined): string => {
+    if (!relativePath) return '';
+    return `${getImageUrl(relativePath)}?refresh=${avatarRefreshKey}&t=${new Date().getTime()}`;
+  };
+
   return (
     <Box>
       {/* هدر صفحه */}
@@ -262,8 +340,9 @@ const UsersPage: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>آواتار</TableCell>
                 <TableCell>نام کاربری</TableCell>
-                <TableCell>نام کامل</TableCell>
+                <TableCell>نام و نام خانوادگی</TableCell>
                 <TableCell>ایمیل</TableCell>
                 <TableCell>شماره موبایل</TableCell>
                 <TableCell>نقش</TableCell>
@@ -287,10 +366,30 @@ const UsersPage: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <UserAvatar 
+                          user={user}
+                          size={40}
+                          sx={{
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                          }}
+                        />
+                        <Box>
+                          <Typography variant="body1" fontWeight="medium">
+                            {user.fullName}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {user.username}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.fullName}</TableCell>
                     <TableCell>{user.email || '-'}</TableCell>
-                    <TableCell>{user.phone || '-'}</TableCell>
+                    <TableCell dir="ltr" style={{ textAlign: 'right' }}>{user.phone || '-'}</TableCell>
                     <TableCell>{getRoleName(user.role)}</TableCell>
                     <TableCell>
                       <Chip
@@ -303,15 +402,14 @@ const UsersPage: React.FC = () => {
                       <IconButton
                         color="primary"
                         onClick={() => handleOpenEditDialog(user)}
-                        size="small"
+                        disabled={currentUser?.id === user.id}
                       >
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         color="error"
                         onClick={() => handleConfirmDelete(user.id)}
-                        size="small"
-                        disabled={user.id === currentUser?.id} // نمی‌توان کاربر جاری را حذف کرد
+                        disabled={currentUser?.id === user.id}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -331,75 +429,76 @@ const UsersPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-            {dialogMode === 'create' && (
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="username"
-                label="نام کاربری"
-                name="username"
-                autoComplete="username"
-                autoFocus
-                value={userInput.username || ''}
-                onChange={handleTextFieldChange}
-              />
-            )}
+            {/* استفاده از کامپوننت AvatarUploader به جای کد قبلی */}
+            <AvatarUploader
+              currentAvatar={userInput.avatar}
+              onAvatarChange={handleAvatarChange}
+              size={120}
+            />
             
+            {/* ادامه فرم موجود */}
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
-              id="fullName"
-              label="نام کامل"
+              label="نام کاربری"
+              name="username"
+              value={userInput.username || ''}
+              onChange={handleTextFieldChange}
+              disabled={dialogMode === 'edit'}
+            />
+            
+            <TextField
+              margin="dense"
+              required={dialogMode === 'create'}
+              fullWidth
+              label="رمز عبور"
+              name="password"
+              type="password"
+              value={userInput.password || ''}
+              onChange={handleTextFieldChange}
+              helperText={dialogMode === 'edit' ? 'در صورت عدم تغییر، خالی بگذارید' : ''}
+            />
+            
+            <TextField
+              margin="dense"
+              required
+              fullWidth
+              label="نام و نام خانوادگی"
               name="fullName"
               value={userInput.fullName || ''}
               onChange={handleTextFieldChange}
             />
             
             <TextField
-              margin="normal"
+              margin="dense"
               fullWidth
-              id="email"
               label="ایمیل"
               name="email"
               type="email"
-              autoComplete="email"
               value={userInput.email || ''}
               onChange={handleTextFieldChange}
             />
             
             <TextField
-              margin="normal"
+              margin="dense"
               fullWidth
-              id="phone"
               label="شماره موبایل"
               name="phone"
               value={userInput.phone || ''}
               onChange={handleTextFieldChange}
+              helperText="اعداد فارسی به انگلیسی تبدیل می‌شوند"
+              inputProps={{ 
+                dir: "ltr",
+                style: { textAlign: 'right' }
+              }}
             />
             
-            <TextField
-              margin="normal"
-              fullWidth
-              id="password"
-              label={dialogMode === 'create' ? 'رمز عبور' : 'رمز عبور جدید (اختیاری)'}
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required={dialogMode === 'create'}
-              value={userInput.password || ''}
-              onChange={handleTextFieldChange}
-            />
-            
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="role-label">نقش کاربر</InputLabel>
+            <FormControl fullWidth margin="dense">
+              <InputLabel>نقش کاربری</InputLabel>
               <Select
-                labelId="role-label"
-                id="role"
                 name="role"
                 value={userInput.role || 'ADMIN'}
-                label="نقش کاربر"
                 onChange={handleSelectChange}
               >
                 <MenuItem value="ADMIN">مدیر سیستم</MenuItem>
@@ -414,9 +513,8 @@ const UsersPage: React.FC = () => {
             <FormControlLabel
               control={
                 <Switch
-                  checked={userInput.isActive === undefined ? true : userInput.isActive}
+                  checked={userInput.isActive !== undefined ? userInput.isActive : true}
                   onChange={handleActiveChange}
-                  name="isActive"
                   color="primary"
                 />
               }

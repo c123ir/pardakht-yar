@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, CssBaseline, useTheme, alpha, useMediaQuery, GlobalStyles } from '@mui/material';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './Header';
 import SideMenu from './SideMenu';
@@ -11,9 +11,9 @@ import SideMenu from './SideMenu';
 const Layout: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const [open, setOpen] = useState(!isMobile);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const location = useLocation();
 
   // تغییر وضعیت منو بر اساس تغییر اندازه صفحه
   useEffect(() => {

@@ -64,10 +64,33 @@ const deleteUser = async (id: number) => {
   }
 };
 
+// آپلود آواتار کاربر
+const uploadAvatar = async (formData: FormData) => {
+  try {
+    const response = await axios.post('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    if (response.data.status !== 'success') {
+      throw new Error(response.data.message || 'خطا در آپلود تصویر پروفایل');
+    }
+    
+    return response.data.data;
+  } catch (error: any) {
+    console.error('Avatar upload error:', error);
+    throw new Error(
+      error.response?.data?.message || 'خطا در آپلود تصویر پروفایل'
+    );
+  }
+};
+
 export default {
   getUsers,
   getUserById,
   createUser,
   updateUser,
   deleteUser,
+  uploadAvatar,
 };

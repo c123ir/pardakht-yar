@@ -12,7 +12,11 @@ export const getUsers = async (req: Request, res: Response) => {
         id: true,
         username: true,
         fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
         role: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -42,7 +46,11 @@ export const getUserById = async (req: Request, res: Response) => {
         id: true,
         username: true,
         fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
         role: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -71,7 +79,7 @@ export const getUserById = async (req: Request, res: Response) => {
 // ایجاد کاربر جدید
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { username, password, fullName, role } = req.body;
+    const { username, password, fullName, role, email, phone, avatar, isActive } = req.body;
 
     // بررسی تکراری نبودن نام کاربری
     const existingUser = await prisma.user.findUnique({
@@ -96,12 +104,20 @@ export const createUser = async (req: Request, res: Response) => {
         password: hashedPassword,
         fullName,
         role,
+        email: email || null,
+        phone: phone || null,
+        avatar: avatar || null,
+        isActive: isActive !== undefined ? isActive : true,
       },
       select: {
         id: true,
         username: true,
         fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
         role: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -124,10 +140,20 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { fullName, role, password } = req.body;
+    const { fullName, role, password, email, phone, avatar, isActive } = req.body;
 
     // اگر کلمه عبور ارسال شده باشد، رمزنگاری انجام شود
-    let updateData: any = { fullName, role };
+    let updateData: any = { 
+      fullName, 
+      role, 
+      email: email || null,
+      phone: phone || null,
+      avatar: avatar || null,
+    };
+    
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+    }
     
     if (password) {
       const salt = await bcrypt.genSalt(10);
@@ -142,7 +168,11 @@ export const updateUser = async (req: Request, res: Response) => {
         id: true,
         username: true,
         fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
         role: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -179,6 +209,65 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.status(500).json({
       status: 'error',
       message: 'خطا در حذف کاربر',
+    });
+  }
+};
+
+// آپلود آواتار کاربر
+export const uploadAvatar = async (req: Request, res: Response) => {
+  try {
+    // بررسی وجود فایل
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'هیچ فایلی آپلود نشده است',
+      });
+    }
+
+    // آماده‌سازی مسیر نسبی برای ذخیره در دیتابیس
+    const relativePath = `/uploads/avatars/${req.file.filename}`;
+    
+    // دریافت شناسه کاربر از توکن
+    const userId = (req as any).user.userId;
+    
+    try {
+      // به‌روزرسانی آواتار کاربر در دیتابیس
+      await prisma.user.update({
+        where: { id: userId },
+        data: { avatar: relativePath },
+      });
+
+      // ارسال پاسخ موفقیت‌آمیز
+      res.json({
+        status: 'success',
+        data: {
+          filePath: relativePath,
+          originalName: req.file.originalname,
+        },
+      });
+    } catch (dbError) {
+      console.error('Error updating avatar in database:', dbError);
+      
+      // در صورت بروز خطا در دیتابیس، فایل آپلود شده را حذف می‌کنیم
+      const fs = require('fs');
+      const path = require('path');
+      const fullPath = path.join(__dirname, '../../', relativePath);
+      
+      try {
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      } catch (fsError) {
+        console.error('Error deleting uploaded file after db error:', fsError);
+      }
+      
+      throw dbError;
+    }
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'خطا در آپلود و ذخیره تصویر پروفایل',
     });
   }
 }; 

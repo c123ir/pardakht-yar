@@ -45,12 +45,16 @@ const Header = ({ date }: { date: Date }) => {
   
   const greeting = () => {
     const hour = date.getHours();
-    if (hour < 12) {
+    if (hour < 5) {
+      return 'بامداد بخیر';
+    } else if (hour <11){
       return 'صبح بخیر';
-    } else if (hour < 17) {
+    } else if (hour < 15) {
       return 'ظهر بخیر';
-    } else {
+    } else if (hour < 18) {
       return 'عصر بخیر';
+    } else {
+      return 'شب بخیر';
     }
   };
 
@@ -92,15 +96,15 @@ const Header = ({ date }: { date: Date }) => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              {`${greeting()}، ${user?.username || 'کاربر گرامی'}`}
+              {`${greeting()}، ${user?.fullName || 'کاربر گرامی'}`}
             </Typography>
             <Typography variant="body1">
               {formatDate()}
             </Typography>
           </Grid>
           <Grid item xs={12} md={6} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-            <Typography variant="h6" fontWeight="medium">
-              سامانت - سامانه مدیریت عملیات تحت شبکه
+          <Typography variant="h6" fontWeight="medium">
+              سامانت - ابزار هوشمند در بایگانی و مدیریت اسناد مالی
             </Typography>
           </Grid>
         </Grid>

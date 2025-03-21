@@ -21,20 +21,13 @@ import {
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
-  Settings as SettingsIcon,
-  Description as DescriptionIcon,
-  Payment as PaymentIcon,
   Category as CategoryIcon,
   Sms as SmsIcon,
   Group as GroupIcon,
   Contacts as ContactsIcon,
   FormatListBulleted as ListIcon,
-  Add as AddIcon,
-  ListAlt as RequestsIcon,
-  Collections as ImagesIcon,
   AccountBalance as PaymentListIcon,
   NoteAdd as NewPaymentIcon,
-  PhotoLibrary as GalleryIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';

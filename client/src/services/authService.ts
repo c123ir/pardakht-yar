@@ -18,18 +18,6 @@ interface ApiResponse {
   };
 }
 
-// تایپ پاسخ پروفایل کاربر
-interface UserResponse {
-  success: boolean;
-  user: {
-    id: number;
-    username: string;
-    fullName: string;
-    email: string | null;
-    role: string;
-  };
-}
-
 // تابع ورود
 const login = async (username: string, password: string) => {
   try {

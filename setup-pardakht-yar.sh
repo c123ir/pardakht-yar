@@ -658,6 +658,42 @@ cat > server/package.json << 'EOF'
 }
 EOF
 
+# تنظیمات پورت‌ها و آدرس‌ها
+port=5050
+client_port=3030
+api_url="http://localhost:${port}/api"
+client_url="http://localhost:${client_port}"
+
+# ایجاد فایل‌های env
+cat > ./client/.env.development << EOL
+VITE_API_URL=${api_url}
+VITE_APP_VERSION=0.1.0
+EOL
+
+cat > ./server/.env << EOL
+# تنظیمات سرور
+PORT=${port}
+NODE_ENV=development
+
+# تنظیمات پایگاه داده PostgreSQL
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pardakht_yar
+
+# تنظیمات JWT
+JWT_SECRET=pardakht_yar_secure_jwt_secret_key
+JWT_EXPIRE=24h
+JWT_REFRESH_EXPIRE=7d
+
+# تنظیمات SMS
+SMS_API_KEY=your_sms_api_key
+SMS_SENDER=your_sms_sender_number
+
+# مسیر ذخیره فایل‌ها
+UPLOAD_PATH=./uploads
+
+# آدرس فرانت‌اند (برای CORS)
+CLIENT_URL=${client_url}
+EOL
+
 cat > server/.env.example << 'EOF'
 # تنظیمات سرور
 PORT=5000

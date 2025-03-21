@@ -23,7 +23,6 @@ import { errorHandler, notFound } from './middleware/errorHandler';
 const app: Express = express();
 
 // میدل‌ورهای عمومی
-//app.use(helmet()); // امنیت هدرها
 app.use(cors({
   origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -31,20 +30,29 @@ app.use(cors({
   optionsSuccessStatus: 204,
   credentials: true
 }));
-app.use(compression()); // فشرده‌سازی پاسخ‌ها
-app.use(express.json()); // پارس کردن JSON در بدنه درخواست
-app.use(express.urlencoded({ extended: true })); // پارس کردن URL-encoded در بدنه درخواست
 
-// لاگینگ درخواست‌ها در محیط توسعه
-if (config.server.nodeEnv === 'development') {
-  app.use(morgan('dev'));
-}
-
-// دسترسی به فایل‌های استاتیک
+// تنظیمات امنیتی helmet با اجازه دسترسی به تصاویر
 app.use(
-  '/uploads',
-  express.static(path.join(__dirname, '../uploads'))
+  helmet({
+    crossOriginResourcePolicy: {
+      policy: "cross-origin"
+    },
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "blob:", "*"],
+      },
+    },
+  })
 );
+
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(compression());
+
+// دسترسی به فایل‌های استاتیک - قبل از مسیرهای API
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // مسیرهای API
 app.use('/api/auth', authRoutes);

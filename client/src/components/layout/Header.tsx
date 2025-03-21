@@ -24,11 +24,11 @@ import {
   MenuOpen as MenuOpenIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
-  AutoAwesome,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import AnimatedLogo from './AnimatedLogo';
+import UserAvatar from '../common/UserAvatar';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -263,50 +263,39 @@ const Header: React.FC<HeaderProps> = ({
             ))}
           </Menu>
           
-          {/* آواتار کاربر */}
-          <Tooltip title="پروفایل">
+          {/* پروفایل کاربر */}
+          <Tooltip title="پروفایل کاربر">
             <IconButton
               onClick={handleMenu}
               sx={{
-                mr: 1,
-                width: 40,
-                height: 40,
-                p: 0,
-                background: alpha(theme.palette.primary.main, 0.1),
-                '&:hover': {
-                  background: alpha(theme.palette.primary.main, 0.2),
-                },
+                p: 0.5,
+                border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                 borderRadius: '12px',
-                overflow: 'hidden',
+                '&:hover': {
+                  border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                }
               }}
             >
-              <Avatar 
-                sx={{ 
-                  width: 36, 
-                  height: 36,
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  }
+              <UserAvatar 
+                user={user}
+                size={36}
+                sx={{
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
                 }}
-              >
-                {user?.fullName?.charAt(0) || 'U'}
-              </Avatar>
+              />
             </IconButton>
           </Tooltip>
           
           {/* منوی پروفایل */}
           <Menu
             anchorEl={anchorEl}
-            id="account-menu"
             open={Boolean(anchorEl)}
             onClose={handleClose}
-            transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
             PaperProps={{
               sx: {
                 mt: 1.5,
-                width: 220,
+                minWidth: 200,
                 background: alpha(theme.palette.background.paper, 0.9),
                 backdropFilter: 'blur(8px)',
                 borderRadius: '12px',
@@ -315,21 +304,49 @@ const Header: React.FC<HeaderProps> = ({
                 border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
               }
             }}
+            transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
           >
-            <MenuItem onClick={handleClose} sx={{ py: 1.5 }}>
+            <Box sx={{ px: 2, py: 2, textAlign: 'center' }}>
+              <UserAvatar 
+                user={user}
+                size={60}
+                sx={{
+                  mx: 'auto',
+                  mb: 1,
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                }}
+              />
+              <ListItemText 
+                primary={user?.fullName || 'کاربر مهمان'}
+                secondary={user?.username}
+                primaryTypographyProps={{ 
+                  variant: 'subtitle1',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}
+                secondaryTypographyProps={{ 
+                  variant: 'caption',
+                  textAlign: 'center'
+                }}
+              />
+            </Box>
+            <Divider />
+            <MenuItem onClick={handleClose}>
               <ListItemIcon>
                 <PersonIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText primary="پروفایل" />
             </MenuItem>
-            <MenuItem onClick={handleClose} sx={{ py: 1.5 }}>
+            <MenuItem onClick={handleClose}>
               <ListItemIcon>
                 <SettingsIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText primary="تنظیمات" />
             </MenuItem>
             <Divider />
-            <MenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
+            <MenuItem onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>

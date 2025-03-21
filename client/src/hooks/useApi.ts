@@ -11,7 +11,7 @@ interface ApiResponse<T = any> {
 export function useApi() {
   // ایجاد نمونه axios با تنظیمات پایه
   const api: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5050/api',
     headers: {
       'Content-Type': 'application/json',
     },

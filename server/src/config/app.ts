@@ -11,9 +11,9 @@ dotenv.config();
 export default {
   // تنظیمات سرور
   server: {
-    port: process.env.PORT || 5000,
+    port: process.env.PORT || 5050,
     nodeEnv: process.env.NODE_ENV || 'development',
-    clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+    clientUrl: process.env.CLIENT_URL || 'http://localhost:3030',
   },
   
   // تنظیمات JWT

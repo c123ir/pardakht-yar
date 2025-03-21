@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "create:admin": "ts-node src/scripts/createAdmin.ts"
+    "create:admin": "ts-node src/scripts/createAdmin.ts",
+    "migrate:avatar": "npx ts-node prisma/migrations/add_avatar_field.js"
   },
   "keywords": [],
   "author": "",

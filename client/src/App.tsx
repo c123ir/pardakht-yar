@@ -8,6 +8,8 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { prefixer } from 'stylis';
 import CssBaseline from '@mui/material/CssBaseline';
+import { ErrorBoundary } from 'react-error-boundary';
+import { Button, Box, Typography } from '@mui/material';
 
 // مسیرهای برنامه
 import AppRoutes from './routes';
@@ -18,6 +20,7 @@ import { AuthProvider } from './contexts/AuthContext';
 // کامپوننت‌های اضافی
 import { ToastProvider } from './contexts/ToastContext';
 import { SnackbarProvider } from './contexts/SnackbarContext';
+import { ImageProvider } from './contexts/ImageContext';
 
 // ایجاد تم سفارشی
 const theme = createTheme({
@@ -86,22 +89,51 @@ const cacheRtl = createCache({
   prepend: true,
 });
 
+// کامپوننت نمایش خطا
+const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => {
+  return (
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      minHeight="100vh"
+      p={3}
+      textAlign="center"
+    >
+      <Typography variant="h4" component="h1" gutterBottom color="error">
+        خطایی رخ داده است
+      </Typography>
+      <Typography variant="body1" gutterBottom>
+        {error.message}
+      </Typography>
+      <Button variant="contained" color="primary" onClick={resetErrorBoundary} sx={{ mt: 2 }}>
+        تلاش مجدد
+      </Button>
+    </Box>
+  );
+};
+
 function App() {
   return (
-    <CacheProvider value={cacheRtl}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline enableColorScheme />
-        <SnackbarProvider>
-          <ToastProvider>
-            <Router>
-              <AuthProvider>
-                <AppRoutes />
-              </AuthProvider>
-            </Router>
-          </ToastProvider>
-        </SnackbarProvider>
-      </ThemeProvider>
-    </CacheProvider>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <CacheProvider value={cacheRtl}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline enableColorScheme />
+          <SnackbarProvider>
+            <ToastProvider>
+              <ImageProvider>
+                <Router>
+                  <AuthProvider>
+                    <AppRoutes />
+                  </AuthProvider>
+                </Router>
+              </ImageProvider>
+            </ToastProvider>
+          </SnackbarProvider>
+        </ThemeProvider>
+      </CacheProvider>
+    </ErrorBoundary>
   );
 }
 

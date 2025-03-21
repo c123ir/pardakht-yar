@@ -4,10 +4,10 @@
 
 ## اطلاعات کلی API
 
-- **URL پایه**: `http://localhost:5000/api`
+- **نسخه**: 1.0.0
+- **URL پایه**: `http://localhost:5050/api`
 - **فرمت مبادله داده**: JSON
 - **احراز هویت**: JWT (JSON Web Token)
-- **نسخه API**: v1
 
 ## مسیرهای API
 
