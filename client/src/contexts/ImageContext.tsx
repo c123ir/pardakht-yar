@@ -85,6 +85,7 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
   // تبدیل مسیر نسبی تصویر به URL کامل
   const getImageUrl = (relativePath: string | null | undefined): string => {
     if (!relativePath) {
+      console.log('No relative path provided');
       return '';
     }
     
@@ -96,18 +97,20 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
     // آدرس سرور
     const serverUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5050';
     
-    // اطمینان از شروع مسیر با /
-    const normalizedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+    // اطمینان از شروع مسیر با /uploads/
+    const normalizedPath = relativePath.startsWith('/') ? relativePath : 
+      relativePath.startsWith('uploads/') ? `/${relativePath}` : `/uploads/${relativePath}`;
     
     // ساخت آدرس کامل تصویر
     const fullUrl = `${serverUrl}${normalizedPath}`;
     
     // برای دیباگ
-    console.log('Image context:', {
+    console.log('Image URL construction:', {
       serverUrl,
       relativePath,
       normalizedPath,
-      fullUrl
+      fullUrl,
+      env: import.meta.env.VITE_API_URL
     });
     
     return fullUrl;

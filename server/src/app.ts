@@ -22,12 +22,11 @@ import { errorHandler, notFound } from './middleware/errorHandler';
 // ایجاد اپلیکیشن Express
 const app: Express = express();
 
-// میدل‌ورهای عمومی
+// تنظیمات CORS
 app.use(cors({
-  origin: '*',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
+  origin: ['http://localhost:3030', 'http://localhost:5050'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
@@ -37,12 +36,7 @@ app.use(
     crossOriginResourcePolicy: {
       policy: "cross-origin"
     },
-    contentSecurityPolicy: {
-      directives: {
-        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "img-src": ["'self'", "data:", "blob:", "*"],
-      },
-    },
+    contentSecurityPolicy: false
   })
 );
 
@@ -51,8 +45,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
+// مسیر فایل‌های آپلود شده
+const uploadsPath = path.join(__dirname, '../uploads');
+console.log('Uploads directory path:', uploadsPath); // برای دیباگ
+
 // دسترسی به فایل‌های استاتیک - قبل از مسیرهای API
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', (req, res, next) => {
+  console.log('Static file request:', req.url); // برای دیباگ
+  express.static(uploadsPath)(req, res, next);
+});
 
 // مسیرهای API
 app.use('/api/auth', authRoutes);
