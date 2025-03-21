@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   server:
     build:
@@ -23,14 +28,13 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/pardakht_yar
       - PORT=5050
-      - JWT_SECRET=your-secret-key-should-be-changed-in-production
-      - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-should-be-changed-in-production}
+      - NODE_ENV=production
     volumes:
-      - ./server:/app
-      - /app/node_modules
-      - ./uploads:/app/uploads
+      - ./uploads:/app/uploads:ro
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   client:
     build:
