@@ -21,6 +21,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { ImageProvider } from './contexts/ImageContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // ایجاد تم سفارشی
 const theme = createTheme({
@@ -122,13 +123,15 @@ function App() {
           <CssBaseline enableColorScheme />
           <SnackbarProvider>
             <ToastProvider>
-              <ImageProvider>
-                <Router>
-                  <AuthProvider>
-                    <AppRoutes />
-                  </AuthProvider>
-                </Router>
-              </ImageProvider>
+              <NotificationProvider>
+                <ImageProvider>
+                  <Router>
+                    <AuthProvider>
+                      <AppRoutes />
+                    </AuthProvider>
+                  </Router>
+                </ImageProvider>
+              </NotificationProvider>
             </ToastProvider>
           </SnackbarProvider>
         </ThemeProvider>

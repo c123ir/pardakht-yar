@@ -279,6 +279,7 @@ model RequestActivity {
 
 enum Role {
   ADMIN
+  USER
   FINANCIAL_MANAGER
   ACCOUNTANT
   SELLER

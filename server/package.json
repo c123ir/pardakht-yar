@@ -13,7 +13,10 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "create:admin": "ts-node src/scripts/createAdmin.ts",
-    "migrate:avatar": "npx ts-node prisma/migrations/add_avatar_field.js"
+    "migrate:avatar": "npx ts-node prisma/migrations/add_avatar_field.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

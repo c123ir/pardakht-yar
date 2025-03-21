@@ -43,7 +43,7 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
       const result = await userService.uploadAvatar(formData);
       
       setUploadProgress(100);
-      return result.filePath;
+      return result.path;
     } catch (error) {
       console.error('Error uploading avatar:', error);
       throw error;

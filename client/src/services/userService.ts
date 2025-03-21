@@ -2,10 +2,10 @@
 // سرویس ارتباط با API کاربران
 
 import axios from '../utils/axios';
-import { User } from '../types/user.types';
+import { User, CreateUserInput, UpdateUserInput } from '../types/user';
 
 // دریافت لیست کاربران
-const getUsers = async () => {
+const getUsers = async (): Promise<User[]> => {
   try {
     const response = await axios.get('/users');
     return response.data.data;
@@ -17,7 +17,7 @@ const getUsers = async () => {
 };
 
 // دریافت اطلاعات یک کاربر
-const getUserById = async (id: number) => {
+const getUserById = async (id: string): Promise<User> => {
   try {
     const response = await axios.get(`/users/${id}`);
     return response.data.data;
@@ -29,7 +29,7 @@ const getUserById = async (id: number) => {
 };
 
 // ایجاد کاربر جدید
-const createUser = async (userData: Partial<User>) => {
+const createUser = async (userData: CreateUserInput): Promise<User> => {
   try {
     const response = await axios.post('/users', userData);
     return response.data.data;
@@ -41,7 +41,7 @@ const createUser = async (userData: Partial<User>) => {
 };
 
 // به‌روزرسانی کاربر
-const updateUser = async (id: number, userData: Partial<User>) => {
+const updateUser = async (id: string, userData: UpdateUserInput): Promise<User> => {
   try {
     const response = await axios.put(`/users/${id}`, userData);
     return response.data.data;
@@ -53,10 +53,9 @@ const updateUser = async (id: number, userData: Partial<User>) => {
 };
 
 // حذف کاربر
-const deleteUser = async (id: number) => {
+const deleteUser = async (id: string): Promise<void> => {
   try {
-    const response = await axios.delete(`/users/${id}`);
-    return response.data;
+    await axios.delete(`/users/${id}`);
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || 'خطا در حذف کاربر'
@@ -64,29 +63,23 @@ const deleteUser = async (id: number) => {
   }
 };
 
-// آپلود آواتار کاربر
-const uploadAvatar = async (formData: FormData) => {
+// آپلود آواتار
+const uploadAvatar = async (formData: FormData): Promise<{ path: string }> => {
   try {
     const response = await axios.post('/users/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
-    if (response.data.status !== 'success') {
-      throw new Error(response.data.message || 'خطا در آپلود تصویر پروفایل');
-    }
-    
     return response.data.data;
   } catch (error: any) {
-    console.error('Avatar upload error:', error);
     throw new Error(
-      error.response?.data?.message || 'خطا در آپلود تصویر پروفایل'
+      error.response?.data?.message || 'خطا در آپلود تصویر'
     );
   }
 };
 
-export default {
+const userService = {
   getUsers,
   getUserById,
   createUser,
@@ -94,3 +87,5 @@ export default {
   deleteUser,
   uploadAvatar,
 };
+
+export default userService;

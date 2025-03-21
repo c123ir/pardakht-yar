@@ -24,7 +24,7 @@ const app: Express = express();
 
 // تنظیمات CORS
 app.use(cors({
-  origin: ['http://localhost:3030', 'http://localhost:5050'],
+  origin: ['http://localhost:3030', 'http://localhost:5050', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -50,10 +50,7 @@ const uploadsPath = path.join(__dirname, '../uploads');
 console.log('Uploads directory path:', uploadsPath); // برای دیباگ
 
 // دسترسی به فایل‌های استاتیک - قبل از مسیرهای API
-app.use('/uploads', (req, res, next) => {
-  console.log('Static file request:', req.url); // برای دیباگ
-  express.static(uploadsPath)(req, res, next);
-});
+app.use('/uploads', express.static(uploadsPath));
 
 // مسیرهای API
 app.use('/api/auth', authRoutes);
