@@ -93,17 +93,23 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
       return relativePath;
     }
     
-    // آدرس API سرور
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
-    // حذف /api از انتهای آدرس
-    const baseServerUrl = apiBaseUrl.replace('/api', '');
+    // آدرس سرور
+    const serverUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5050';
     
     // اطمینان از شروع مسیر با /
     const normalizedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
     
     // ساخت آدرس کامل تصویر
-    const fullUrl = `${baseServerUrl}${normalizedPath}`;
-    console.log('Generated image URL:', fullUrl); // برای دیباگ
+    const fullUrl = `${serverUrl}${normalizedPath}`;
+    
+    // برای دیباگ
+    console.log('Image context:', {
+      serverUrl,
+      relativePath,
+      normalizedPath,
+      fullUrl
+    });
+    
     return fullUrl;
   };
   
