@@ -2,17 +2,18 @@
 // کامپوننت لایه‌بندی اصلی برنامه
 
 import React, { useState, useEffect } from 'react';
-import { Box, CssBaseline, useTheme, alpha, useMediaQuery } from '@mui/material';
+import { Box, CssBaseline, useTheme, alpha, useMediaQuery, GlobalStyles } from '@mui/material';
 import { Outlet } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './Header';
 import SideMenu from './SideMenu';
 
 const Layout: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const [open, setOpen] = useState(!isMobile);
-  const [isDarkMode, setIsDarkMode] = useState(true); // افزودن وضعیت برای حالت تاریک/روشن
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // تغییر وضعیت منو بر اساس تغییر اندازه صفحه
   useEffect(() => {
@@ -20,7 +21,6 @@ const Layout: React.FC = () => {
   }, [isMobile]);
 
   // این فانکشن در واقعیت باید تم اصلی برنامه را تغییر دهد
-  // در این نمونه فقط وضعیت را برای نمایش مناسب لوگو ذخیره می‌کنیم
   const handleToggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
@@ -30,11 +30,38 @@ const Layout: React.FC = () => {
   };
 
   const drawerWidth = open ? 240 : 70;
+  
+  // این مقدار برای تبلت و موبایل متفاوت است
+  const contentMargin = isMobile ? 0 : (open ? drawerWidth : 70);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', direction: 'rtl' }}>
+      <GlobalStyles 
+        styles={{
+          ':root': {
+            '--header-height': '64px',
+            '--drawer-width': `${drawerWidth}px`,
+          },
+          '*::-webkit-scrollbar': {
+            width: '6px',
+            height: '6px',
+          },
+          '*::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.2),
+            borderRadius: '3px',
+          },
+          '*::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.4),
+          },
+        }} 
+      />
       
       <CssBaseline />
+      
+      {/* هدر برنامه */}
       <Header 
         onToggleSidebar={handleToggleSidebar} 
         isDarkMode={isDarkMode}
@@ -42,28 +69,52 @@ const Layout: React.FC = () => {
         onToggleTheme={handleToggleTheme}
       />
 
+      {/* منوی کناری */}
       <SideMenu open={open} onClose={() => setOpen(false)} />
+      
+      {/* محتوای اصلی */}
       <Box
         component={motion.main}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        animate={{ 
+          opacity: 1,
+          marginRight: isMobile ? 0 : `${contentMargin}px`,
+          width: isMobile ? '100%' : `calc(100% - ${contentMargin}px)`,
+        }}
+        transition={{ 
+          duration: 0.3,
+          type: 'spring',
+          stiffness: 300,
+          damping: 30
+        }}
         sx={{
           flexGrow: 1,
-          p: 3,
-          mt: 8,
-          ml: { xs: 0, md: isMobile ? 0 : !open ? '70px' : '240px' },
+          p: { xs: 2, md: 3 },
+          mt: '64px', // ارتفاع هدر
           mr: 0,
-          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
           transition: theme.transitions.create(['margin', 'width'], {
             easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
+            duration: theme.transitions.duration.enteringScreen,
           }),
           background: `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.03)} 0%, ${alpha(theme.palette.secondary.dark, 0.03)} 100%)`,
           minHeight: 'calc(100vh - 64px)',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </Box>
     </Box>
   );
