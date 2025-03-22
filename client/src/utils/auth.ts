@@ -8,17 +8,28 @@ import { LOCAL_STORAGE_KEYS } from '../config';
  * @returns توکن احراز هویت یا null
  */
 export const getAuthToken = (): string | null => {
-  const token = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
-  
-  // اطمینان از اعتبار توکن
-  if (token && !isTokenValid(token)) {
-    // حذف توکن نامعتبر
-    removeAuthToken();
-    removeUserData();
+  try {
+    const token = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+    
+    // اگر توکن وجود ندارد، نیازی به بررسی نیست
+    if (!token) {
+      return null;
+    }
+    
+    // اطمینان از اعتبار توکن
+    if (!isTokenValid(token)) {
+      console.warn('Invalid or expired token found, removing...');
+      // حذف توکن نامعتبر
+      removeAuthToken();
+      removeUserData();
+      return null;
+    }
+    
+    return token;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
     return null;
   }
-  
-  return token;
 };
 
 /**
@@ -47,9 +58,15 @@ export const isTokenValid = (token: string): boolean => {
     const expTime = payload.exp * 1000; // تبدیل به میلی‌ثانیه
     const currentTime = Date.now();
     
-    console.log(`Token exp time: ${new Date(expTime).toISOString()}, Current time: ${new Date(currentTime).toISOString()}, Valid: ${expTime > currentTime}`);
+    // افزودن یک بافر 5 دقیقه‌ای برای زمان انقضا
+    const EXPIRATION_BUFFER = 5 * 60 * 1000; // 5 دقیقه به میلی‌ثانیه
+    const isValid = expTime > (currentTime + EXPIRATION_BUFFER);
     
-    return expTime > currentTime;
+    if (!isValid) {
+      console.warn(`Token expired or expiring soon: ${new Date(expTime).toISOString()}, Current time: ${new Date(currentTime).toISOString()}`);
+    }
+    
+    return isValid;
   } catch (error) {
     console.error('Error validating token:', error);
     return false;
@@ -61,14 +78,35 @@ export const isTokenValid = (token: string): boolean => {
  * @param token توکن احراز هویت
  */
 export const setAuthToken = (token: string): void => {
-  localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, token);
+  try {
+    if (!token) {
+      console.warn('Attempted to save empty token');
+      return;
+    }
+    
+    // بررسی اعتبار توکن قبل از ذخیره
+    if (!isTokenValid(token)) {
+      console.warn('Attempted to save invalid token');
+      return;
+    }
+    
+    localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, token);
+    console.log('Auth token saved successfully');
+  } catch (error) {
+    console.error('Error saving auth token:', error);
+  }
 };
 
 /**
  * حذف توکن احراز هویت از لوکال استوریج
  */
 export const removeAuthToken = (): void => {
-  localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+    console.log('Auth token removed');
+  } catch (error) {
+    console.error('Error removing auth token:', error);
+  }
 };
 
 /**
@@ -77,7 +115,6 @@ export const removeAuthToken = (): void => {
  */
 export const getAuthHeader = (): Record<string, string> => {
   const token = getAuthToken();
-  console.log('Current auth token:', token);
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -94,7 +131,17 @@ export const isAuthenticated = (): boolean => {
  * @param userData اطلاعات کاربر
  */
 export const setUserData = (userData: any): void => {
-  localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+  try {
+    if (!userData) {
+      console.warn('Attempted to save empty user data');
+      return;
+    }
+    
+    localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+    console.log('User data saved successfully');
+  } catch (error) {
+    console.error('Error saving user data:', error);
+  }
 };
 
 /**
@@ -102,21 +149,36 @@ export const setUserData = (userData: any): void => {
  * @returns اطلاعات کاربر یا null
  */
 export const getUserData = (): any | null => {
-  const userData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
-  return userData ? JSON.parse(userData) : null;
+  try {
+    const userData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
+    return userData ? JSON.parse(userData) : null;
+  } catch (error) {
+    console.error('Error getting user data:', error);
+    return null;
+  }
 };
 
 /**
  * حذف اطلاعات کاربر از لوکال استوریج
  */
 export const removeUserData = (): void => {
-  localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_DATA);
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_DATA);
+    console.log('User data removed');
+  } catch (error) {
+    console.error('Error removing user data:', error);
+  }
 };
 
 /**
  * خروج کاربر از سیستم و پاک کردن اطلاعات احراز هویت
  */
 export const logout = (): void => {
-  removeAuthToken();
-  removeUserData();
+  try {
+    removeAuthToken();
+    removeUserData();
+    console.log('User logged out successfully');
+  } catch (error) {
+    console.error('Error during logout:', error);
+  }
 }; 

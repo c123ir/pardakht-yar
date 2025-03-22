@@ -21,6 +21,25 @@ async function main() {
   });
 
   console.log('Admin user created:', admin);
+  
+  // ایجاد کاربر دمو با نقش کارمندی و شماره 18
+  const hashedUserPassword = await bcrypt.hash('user123', 10);
+  
+  const demoUser = await prisma.user.upsert({
+    where: { username: 'user18' },
+    update: {},
+    create: {
+      username: 'user18',
+      password: hashedUserPassword,
+      fullName: 'کاربر شماره ۱۸',
+      email: 'user18@example.com',
+      phone: '09123456789',
+      role: 'USER',
+      isActive: true,
+    },
+  });
+
+  console.log('Demo user created:', demoUser);
 }
 
 main()
