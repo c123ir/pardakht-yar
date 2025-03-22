@@ -3,6 +3,7 @@
 
 import { format, parse, isValid } from 'date-fns-jalali';
 import { addHours, isSameDay } from 'date-fns';
+import { convertEnglishToPersianNumbers } from './stringUtils';
 
 /**
  * تبدیل تاریخ میلادی به شمسی
@@ -166,28 +167,124 @@ export const formatDate = (date: Date | string | number): string => {
  * @param date تاریخ مورد نظر
  */
 export const getRelativeTime = (date: Date | string): string => {
-  const targetDate = new Date(date);
-  const now = new Date();
+  if (!date) return '-';
   
-  if (!isValid(targetDate)) return '';
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const now = new Date();
+    const diffMs = now.getTime() - dateObj.getTime();
+    
+    // تبدیل به ثانیه
+    const diffSec = Math.floor(diffMs / 1000);
+    
+    // کمتر از یک دقیقه
+    if (diffSec < 60) {
+      return 'لحظاتی پیش';
+    }
+    
+    // تبدیل به دقیقه
+    const diffMin = Math.floor(diffSec / 60);
+    
+    // کمتر از یک ساعت
+    if (diffMin < 60) {
+      return `${convertEnglishToPersianNumbers(diffMin.toString())} دقیقه پیش`;
+    }
+    
+    // تبدیل به ساعت
+    const diffHour = Math.floor(diffMin / 60);
+    
+    // کمتر از یک روز
+    if (diffHour < 24) {
+      return `${convertEnglishToPersianNumbers(diffHour.toString())} ساعت پیش`;
+    }
+    
+    // تبدیل به روز
+    const diffDay = Math.floor(diffHour / 24);
+    
+    // کمتر از یک هفته
+    if (diffDay < 7) {
+      return `${convertEnglishToPersianNumbers(diffDay.toString())} روز پیش`;
+    }
+    
+    // تبدیل به هفته
+    const diffWeek = Math.floor(diffDay / 7);
+    
+    // کمتر از یک ماه
+    if (diffWeek < 4) {
+      return `${convertEnglishToPersianNumbers(diffWeek.toString())} هفته پیش`;
+    }
+    
+    // بیشتر از یک ماه: نمایش تاریخ کامل
+    return formatDateToPersian(dateObj);
+  } catch (error) {
+    console.error('خطا در محاسبه زمان نسبی:', error);
+    return '-';
+  }
+};
+
+/**
+ * فرمت کردن تاریخ به صورت شمسی (1402/01/01)
+ * @param date تاریخ میلادی
+ * @returns رشته تاریخ شمسی
+ */
+export const formatDateToPersian = (date: Date | string | null): string => {
+  if (!date) return '-';
   
-  const diffInMs = now.getTime() - targetDate.getTime();
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // تبدیل به تاریخ شمسی
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      calendar: 'persian'
+    };
+    
+    // دریافت تاریخ شمسی با فرمت پیش‌فرض
+    const persianDate = dateObj.toLocaleDateString('fa-IR', options);
+    
+    // حذف فاصله‌ها و جایگزینی / به جای -
+    return persianDate.replace(/\s/g, '').replace(/-/g, '/');
+  } catch (error) {
+    console.error('خطا در تبدیل تاریخ:', error);
+    return '-';
+  }
+};
+
+/**
+ * فرمت کردن تاریخ و زمان به صورت شمسی (1402/01/01 14:30)
+ * @param dateTime تاریخ و زمان میلادی
+ * @returns رشته تاریخ و زمان شمسی
+ */
+export const formatDateTimeToPersian = (dateTime: Date | string | null): string => {
+  if (!dateTime) return '-';
   
-  if (diffInDays === 0) {
-    return 'امروز';
-  } else if (diffInDays === 1) {
-    return 'دیروز';
-  } else if (diffInDays < 7) {
-    return `${diffInDays} روز پیش`;
-  } else if (diffInDays < 30) {
-    const weeks = Math.floor(diffInDays / 7);
-    return `${weeks} هفته پیش`;
-  } else if (diffInDays < 365) {
-    const months = Math.floor(diffInDays / 30);
-    return `${months} ماه پیش`;
-  } else {
-    const years = Math.floor(diffInDays / 365);
-    return `${years} سال پیش`;
+  try {
+    const dateObj = typeof dateTime === 'string' ? new Date(dateTime) : dateTime;
+    
+    // تاریخ شمسی
+    const dateOptions: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      calendar: 'persian'
+    };
+    const persianDate = dateObj.toLocaleDateString('fa-IR', dateOptions)
+      .replace(/\s/g, '')
+      .replace(/-/g, '/');
+    
+    // زمان
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    const time = dateObj.toLocaleTimeString('fa-IR', timeOptions);
+    
+    // ترکیب تاریخ و زمان
+    return `${persianDate} ${time}`;
+  } catch (error) {
+    console.error('خطا در تبدیل تاریخ و زمان:', error);
+    return '-';
   }
 };

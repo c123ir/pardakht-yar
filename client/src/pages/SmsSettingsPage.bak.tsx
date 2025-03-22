@@ -4,32 +4,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  Paper,
   Typography,
+  Paper,
   TextField,
   Button,
-  Switch,
   Grid,
   FormControlLabel,
-  CircularProgress,
-  Tabs,
-  Tab,
-  Chip,
+  Switch,
   Divider,
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
+  CircularProgress,
+  Alert,
   Card,
   CardContent,
-  Avatar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  InputAdornment,
   IconButton,
+  Chip,
+  Tabs,
+  Tab,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -38,59 +29,74 @@ import {
   Tooltip,
   FormControl,
   InputLabel,
-  OutlinedInput,
-  InputAdornment,
   Select,
-  SelectChangeEvent,
-  Alert,
-  alpha,
   useTheme,
-  Theme,
-  styled,
+  alpha,
+  Collapse,
+  LinearProgress,
+  Avatar,
+  Fade,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Skeleton,
   List,
   ListItem,
-  Skeleton,
+  ListItemIcon,
+  ListItemText,
   Snackbar,
   Container,
 } from '@mui/material';
-import { motion } from 'framer-motion';
+import { styled } from '@mui/material/styles';
 import {
+  Save as SaveIcon,
   Send as SendIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
   Settings as SettingsIcon,
-  CreditCard as CreditCardIcon,
   History as HistoryIcon,
+  Schedule as ScheduleIcon,
   Group as GroupIcon,
   Dashboard as DashboardIcon,
-  Description as TemplateIcon,
-  Edit as EditIcon,
-  Delete as DeleteOutlineIcon,
-  Schedule as ScheduleIcon,
-  Done as DoneIcon,
-  Cancel as CancelIcon,
+  Template as TemplateIcon,
+  Add as AddIcon,
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Warning as WarningIcon,
+  Phone as PhoneIcon,
+  Sms as SmsIcon,
+  Message as MessageIcon,
+  CreditCard as CreditCardIcon,
+  Email as EmailIcon,
+  MoreVert as MoreVertIcon,
+  Report as ReportIcon,
+  DeleteOutline as DeleteOutlineIcon,
+  ContentCopy as ContentCopyIcon,
+  Edit as EditIcon,
+  Autorenew as AutorenewIcon,
+  Phone as MobileIcon,
+  Person as PersonIcon,
+  Lock as LockIcon,
   Search as SearchIcon,
   CalendarToday as CalendarTodayIcon,
   ErrorOutline as ErrorOutlineIcon,
   MonetizationOn as MonetizationOnIcon,
-  Add as AddIcon,
-  Autorenew as AutorenewIcon,
-  Save as SaveIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Person as PersonIcon,
-  Lock as LockIcon,
-  PhoneAndroid as MobileIcon,
-  Phone as PhoneIcon,
-  Sms as SmsIcon,
-  Message as MessageIcon,
-  Email as EmailIcon,
-  Warning as WarningIcon,
-  ContentCopy as ContentCopyIcon,
+  NotesRounded as NotesRoundedIcon,
+  Done as DoneIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import smsService from '../services/smsService';
 import { convertPersianToEnglishNumbers } from '../utils/stringUtils';
 import { useToast } from '../hooks/useToast';
+import { motion } from 'framer-motion';
 import { ApiResponse } from '../types/api';
 
 // تعریف انواع سرویس‌های پیامکی
@@ -246,41 +252,32 @@ const SmsSettingsPage: React.FC = () => {
   const { showToast, toast, hideToast } = useToast();
   const [activeTab, setActiveTab] = useState<SmsSettingsTabs>(SmsSettingsTabs.SETTINGS);
   
-  // استیت‌های خطا و لودینگ
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  
   // استیت‌های تنظیمات پیامک
   const [settings, setSettings] = useState<SmsSettings>({
-    provider: SmsProvider.KAVENEGAR,
+    provider: SmsProvider.SMS0098,
     username: '',
     password: '',
     from: '',
     isActive: false,
+    lines: [],
+    defaultLine: '',
   });
-  const [loadingSettings, setLoadingSettings] = useState(true);
-  
-  // استیت‌های ارسال پیامک آزمایشی
+  const [saving, setSaving] = useState(false);
   const [testNumber, setTestNumber] = useState('');
   const [testMessage, setTestMessage] = useState('پیامک آزمایشی پرداخت‌یار');
   const [sendingTest, setSendingTest] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
   const [deliveryStatus, setDeliveryStatus] = useState<{status: string | null, message: string} | null>(null);
   const [checkingStatus, setCheckingStatus] = useState(false);
-  
-  // استیت اعتبار پیامک
   const [credit, setCredit] = useState<number | null>(null);
   const [loadingCredit, setLoadingCredit] = useState(false);
   
   // استیت‌های تاریخچه پیامک
   const [smsLogs, setSmsLogs] = useState<SmsLogItem[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [logsFilter, setLogsFilter] = useState({
-    status: 'all',
-    timeRange: 'all',
-    search: '',
-  });
+  const [logsFilter, setLogsFilter] = useState({ status: 'all', search: '', days: 7 });
   
   // استیت‌های قالب‌های پیامک
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
@@ -294,13 +291,13 @@ const SmsSettingsPage: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState<ContactGroup | null>(null);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   
-  // استیت‌های زمانبندی ارسال پیامک
+  // استیت‌های زمانبندی پیامک
   const [schedules, setSchedules] = useState<SmsSchedule[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<SmsSchedule | null>(null);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   
-  // استیت‌های آمار و گزارشات
+  // استیت‌های داشبورد و آمار
   const [stats, setStats] = useState<SmsStats>({
     totalSent: 0,
     delivered: 0,
@@ -354,7 +351,7 @@ const SmsSettingsPage: React.FC = () => {
 
   // دریافت تنظیمات پیامک
   const fetchSettings = async () => {
-    setLoadingSettings(true);
+    setError(null);
     try {
       const response = await smsService.getSettings();
       if (response.success && response.data) {
@@ -739,6 +736,7 @@ const SmsSettingsPage: React.FC = () => {
       failed: 100,
       pending: 100,
       credit: credit || 152000,
+      // تغییر آرایه به آرایه‌ای از آبجکت‌ها با ساختار مناسب
       monthlySent: [
         { month: 'فروردین', count: 150 },
         { month: 'اردیبهشت', count: 220 },
@@ -1239,16 +1237,16 @@ const SmsSettingsPage: React.FC = () => {
                   <FormControl size="small" sx={{ minWidth: 120 }}>
                     <InputLabel>بازه زمانی</InputLabel>
                     <Select
-                      value={logsFilter.timeRange}
-                      onChange={(e) => setLogsFilter({...logsFilter, timeRange: e.target.value as string})}
+                      value={logsFilter.days}
+                      onChange={(e) => setLogsFilter({...logsFilter, days: Number(e.target.value)})}
                       label="بازه زمانی"
                     >
-                      <MenuItem value="today">امروز</MenuItem>
-                      <MenuItem value="week">هفته گذشته</MenuItem>
-                      <MenuItem value="month">ماه گذشته</MenuItem>
-                      <MenuItem value="quarter">سه ماه گذشته</MenuItem>
-                      <MenuItem value="year">سال گذشته</MenuItem>
-                      <MenuItem value="all">همه زمان‌ها</MenuItem>
+                      <MenuItem value={1}>امروز</MenuItem>
+                      <MenuItem value={7}>هفته گذشته</MenuItem>
+                      <MenuItem value={30}>ماه گذشته</MenuItem>
+                      <MenuItem value={90}>سه ماه گذشته</MenuItem>
+                      <MenuItem value={365}>سال گذشته</MenuItem>
+                      <MenuItem value={0}>همه زمان‌ها</MenuItem>
                     </Select>
                   </FormControl>
                   
@@ -1299,16 +1297,13 @@ const SmsSettingsPage: React.FC = () => {
                           }
                           
                           // فیلتر بر اساس بازه زمانی
-                          if (logsFilter.timeRange !== 'all') {
+                          if (logsFilter.days > 0) {
                             const logDate = new Date(log.sentAt);
                             const now = new Date();
                             const diffDays = Math.floor((now.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
-                            
-                            if (logsFilter.timeRange === 'today' && diffDays > 0) return false;
-                            if (logsFilter.timeRange === 'week' && diffDays > 7) return false;
-                            if (logsFilter.timeRange === 'month' && diffDays > 30) return false;
-                            if (logsFilter.timeRange === 'quarter' && diffDays > 90) return false;
-                            if (logsFilter.timeRange === 'year' && diffDays > 365) return false;
+                            if (diffDays > logsFilter.days) {
+                              return false;
+                            }
                           }
                           
                           return true;
@@ -2666,7 +2661,6 @@ const SmsSettingsPage: React.FC = () => {
                           </Typography>
                         </Box>
                         
-                        {/* تعریف استایل بار نمودار با تایپ صحیح theme */}
                         <Box
                           sx={{
                             position: 'absolute',
@@ -2675,8 +2669,8 @@ const SmsSettingsPage: React.FC = () => {
                             width: '100%',
                             height: '100%',
                             background: `conic-gradient(
-                              ${(theme: Theme) => theme.palette.success.main} 0% ${(stats.deliveredCount / (stats.deliveredCount + stats.failedCount)) * 100}%,
-                              ${(theme: Theme) => theme.palette.error.main} ${(stats.deliveredCount / (stats.deliveredCount + stats.failedCount)) * 100}% 100%
+                              ${theme => theme.palette.success.main} 0% ${(stats.deliveredCount / (stats.deliveredCount + stats.failedCount)) * 100}%,
+                              ${theme => theme.palette.error.main} ${(stats.deliveredCount / (stats.deliveredCount + stats.failedCount)) * 100}% 100%
                             )`,
                             opacity: 0.7,
                           }}

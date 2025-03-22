@@ -52,4 +52,58 @@ export const formatAmountWithCommas = (amount: number | string): string => {
   
   // تبدیل مجدد اعداد فارسی به انگلیسی (برای اطمینان)
   return convertPersianToEnglishNumbers(formattedAmount);
+};
+
+/**
+ * تبدیل اعداد انگلیسی به فارسی
+ * @param str رشته حاوی اعداد انگلیسی
+ * @returns رشته با اعداد فارسی
+ */
+export const convertEnglishToPersianNumbers = (str: string): string => {
+  const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  
+  let result = str;
+  
+  // جایگزینی اعداد انگلیسی
+  englishNumbers.forEach((num, index) => {
+    result = result.replace(new RegExp(num, 'g'), persianNumbers[index]);
+  });
+  
+  return result;
+};
+
+/**
+ * تبدیل عدد به فرمت پول با جداکننده سه رقمی و واحد تومان
+ * @param amount مبلغ
+ * @param withUnit آیا واحد تومان اضافه شود؟
+ * @returns رشته فرمت شده
+ */
+export const formatCurrency = (amount: number, withUnit = true): string => {
+  // جدا کردن هر سه رقم با کاما
+  const formattedNumber = amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  
+  // تبدیل اعداد به فارسی
+  const persianNumber = convertEnglishToPersianNumbers(formattedNumber);
+  
+  // اضافه کردن واحد تومان در صورت نیاز
+  return withUnit ? `${persianNumber} تومان` : persianNumber;
+};
+
+/**
+ * حذف فاصله‌های اضافی و استاندارد کردن فاصله‌ها
+ * @param str رشته ورودی
+ * @returns رشته با فاصله‌های استاندارد
+ */
+export const normalizeSpaces = (str: string): string => {
+  // حذف فاصله‌های ابتدا و انتها
+  let result = str.trim();
+  
+  // تبدیل نیم‌فاصله به فاصله معمولی
+  result = result.replace(/\u200C/g, ' ');
+  
+  // جایگزینی چند فاصله پشت سر هم با یک فاصله
+  result = result.replace(/\s+/g, ' ');
+  
+  return result;
 }; 

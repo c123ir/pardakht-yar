@@ -3,28 +3,10 @@
 
 import axios from '../utils/axios';
 import { convertPersianToEnglishNumbers } from '../utils/stringUtils';
+import { SmsSettings, SmsDeliveryStatus } from '../types/sms';
+import { ApiResponse } from '../types/api';
 
-interface SmsSettings {
-  provider: string;
-  username: string;
-  password: string;
-  from: string;
-  isActive: boolean;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
-interface SmsDeliveryStatus {
-  messageId: string;
-  status: string | null;
-  message: string;
-}
-
-export const smsService = {
+const smsService = {
   getSettings: async (): Promise<ApiResponse<SmsSettings>> => {
     try {
       const response = await axios.get('/settings/sms');
@@ -57,7 +39,7 @@ export const smsService = {
     }
   },
 
-  sendTestSms: async (to: string, text: string): Promise<ApiResponse<any>> => {
+  sendTestSms: async (to: string, text: string): Promise<ApiResponse<{ messageId: string }>> => {
     try {
       // تبدیل اعداد فارسی به انگلیسی در شماره موبایل
       const convertedTo = convertPersianToEnglishNumbers(to);
@@ -68,7 +50,6 @@ export const smsService = {
     } catch (error: any) {
       console.error('خطا در ارسال پیامک آزمایشی:', error);
       
-      // در صورتی که خطا از سمت سرور دریافت شده باشد، آن را نمایش می‌دهیم
       const errorMessage = error.response?.data?.message || 'خطا در ارسال پیامک آزمایشی';
       
       return {
@@ -86,6 +67,22 @@ export const smsService = {
       console.error('خطا در دریافت وضعیت تحویل پیامک:', error);
       
       const errorMessage = error.response?.data?.message || 'خطا در دریافت وضعیت تحویل پیامک';
+      
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  },
+  
+  getCredit: async (): Promise<ApiResponse<{ credit: number }>> => {
+    try {
+      const response = await axios.get('/settings/sms/credit');
+      return response.data;
+    } catch (error: any) {
+      console.error('خطا در دریافت اعتبار پیامک:', error);
+      
+      const errorMessage = error.response?.data?.message || 'خطا در دریافت اعتبار پیامک';
       
       return {
         success: false,
