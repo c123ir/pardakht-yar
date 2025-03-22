@@ -59,8 +59,10 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     return <FallbackAvatar name={name} size={size} sx={sx} />;
   }
 
-  // تبدیل مسیر نسبی به URL کامل با اضافه کردن پارامتر زمان برای جلوگیری از کش
-  const imageUrl = avatar ? getImageUrl(avatar) + `?t=${imgKey}&nocache=true` : '';
+  // تبدیل مسیر نسبی به URL کامل با اضافه کردن پارامترهای قوی‌تر برای جلوگیری از کش
+  const imageUrl = avatar 
+    ? getImageUrl(avatar) + `?t=${imgKey}&r=${Math.random()}&nocache=true` 
+    : '';
 
   // مشخص کردن رفتار در صورت خطا - استفاده از آدرس نسبی (بدون URL کامل)
   const fallbackPath = '/avatar.jpg';

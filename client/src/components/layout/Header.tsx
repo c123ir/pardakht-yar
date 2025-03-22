@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -23,6 +23,7 @@ import {
   MenuOpen as MenuOpenIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
@@ -47,6 +48,20 @@ const Header: React.FC<HeaderProps> = ({
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null);
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState(Date.now());
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+
+  useEffect(() => {
+    setAvatarRefreshKey(Date.now());
+    forceUpdate();
+    
+    const timer = setTimeout(() => {
+      setAvatarRefreshKey(Date.now());
+      forceUpdate();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [user?.avatar, user?._avatarUpdated, user?.id]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -264,28 +279,37 @@ const Header: React.FC<HeaderProps> = ({
           
           {/* پروفایل کاربر */}
           <Tooltip title="پروفایل کاربر">
-            <IconButton
-              onClick={handleMenu}
-              sx={{
-                p: 0.5,
-                border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                borderRadius: '12px',
-                '&:hover': {
-                  border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                }
-              }}
-            >
+            <Box sx={{ position: 'relative' }}>
               <UserAvatar 
                 avatar={user?.avatar}
                 name={user?.fullName || ''}
                 size={36}
-                key={Date.now()}
-                sx={{
-                  bgcolor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                }}
+                key={`header-avatar-${avatarRefreshKey}`}
+                forceRefresh={true}
               />
-            </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setAvatarRefreshKey(Date.now());
+                  forceUpdate();
+                }}
+                sx={{
+                  position: 'absolute',
+                  top: -6,
+                  right: -6,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  width: 16,
+                  height: 16,
+                  padding: 0,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                  }
+                }}
+              >
+                <RefreshIcon fontSize="small" sx={{ fontSize: 12 }} />
+              </IconButton>
+            </Box>
           </Tooltip>
           
           {/* منوی پروفایل */}
@@ -311,9 +335,10 @@ const Header: React.FC<HeaderProps> = ({
             <Box sx={{ px: 2, py: 2, textAlign: 'center' }}>
               <UserAvatar 
                 avatar={user?.avatar}
-                name={user?.fullName || ''}
+                name={user?.fullName || 'کاربر مهمان'}
                 size={60}
-                key={Date.now()}
+                key={`profile-menu-avatar-${avatarRefreshKey}`}
+                forceRefresh={true}
                 sx={{
                   mx: 'auto',
                   mb: 1,

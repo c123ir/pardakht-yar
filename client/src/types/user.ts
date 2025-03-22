@@ -2,14 +2,14 @@ export interface User {
   id: string;
   username: string;
   fullName: string;
-  email: string;
-  phone: string;
-  role: UserRole;
+  email?: string;
+  phone?: string;
   isActive: boolean;
+  role: string;
   avatar?: string;
-  createdAt: string;
-  updatedAt: string;
   _avatarUpdated?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateUserInput {
@@ -30,6 +30,7 @@ export interface UpdateUserInput {
   password?: string;
   isActive: boolean;
   avatar?: string;
+  role?: UserRole;
 }
 
 export type UserRole = 'ADMIN' | 'USER';

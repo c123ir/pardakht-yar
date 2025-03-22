@@ -1,7 +1,7 @@
 // client/src/contexts/AuthContext.tsx
 // کانتکست مدیریت احراز هویت
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import { getAuthToken, getUserData, removeAuthToken, removeUserData } from '../utils/auth';
@@ -22,6 +22,7 @@ interface AuthContextType {
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUserDetails: (user: User) => void;
 }
 
 // ایجاد کانتکست با مقدار پیش‌فرض
@@ -32,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   error: null,
   login: async () => {},
   logout: () => {},
+  updateUserDetails: () => {},
 });
 
 // کامپوننت Provider
@@ -89,6 +91,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(tokenCheckInterval);
   }, []);
 
+  // افزودن useEffect برای خواندن کاربر از localStorage در هر رندر
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && !user) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    }
+  }, [user]);
+
   // تابع ورود
   const login = async (username: string, password: string) => {
     setError(null);
@@ -126,6 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/login');
   };
 
+  // تابع به‌روزرسانی اطلاعات کاربر
+  const updateUserDetails = useCallback((updatedUser: User) => {
+    console.log('Updating user details:', updatedUser);
+    setUser(updatedUser);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -135,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         login,
         logout,
+        updateUserDetails,
       }}
     >
       {children}

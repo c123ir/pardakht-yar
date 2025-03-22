@@ -27,6 +27,7 @@ import FallbackAvatar from '../common/FallbackAvatar';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import UserAvatar from '../common/UserAvatar';
+import { useAuth } from '../../hooks/useAuth';
 
 // تعریف مستقیم تایپ‌ها به جای import از ماژول react-easy-crop/types
 interface Point {
@@ -135,6 +136,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatar || null);
   const [hasImageError, setHasImageError] = useState(false);
   const { t } = useTranslation();
+  const { user: authUser, updateUserDetails } = useAuth();
   
   // انتخاب تصویر
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,6 +226,15 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       const result = await uploadAvatar(croppedImageFile, userId);
       console.log('آپلود موفق آمیز آواتار:', result);
       
+      // اگر کاربر فعلی در حال ویرایش آواتار خودش است، هدر را هم به‌روزرسانی کنیم
+      if (authUser && userId && authUser.id.toString() === userId.toString()) {
+        updateUserDetails({
+          ...authUser,
+          avatar: result.path,
+          _avatarUpdated: Date.now()
+        });
+      }
+      
       // فراخوانی تابع callback
       onAvatarChange(result.path);
       
@@ -281,25 +292,29 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   
   // پیش‌نمایش آواتار
   const renderPreview = () => {
-    // اگر آواتار جدید انتخاب شده باشد، آن را نمایش می‌دهیم
+    // استایل‌های مشترک برای باکس نگهدارنده آواتار
+    const boxStyle = {
+      width: size,
+      height: size,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      overflow: 'hidden',
+      borderRadius: '50%',
+      border: '2px solid rgba(0, 0, 0, 0.1)', // اضافه کردن حاشیه برای وضوح بیشتر
+      margin: '0 auto', // مرکز قرار دادن آواتار
+    };
+
     if (previewUrl) {
       return (
         <Box
-          sx={{
-            width: size,
-            height: size,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
-            borderRadius: '50%',
-          }}
+          sx={boxStyle}
           className={clsx('avatar-preview', { 'has-error': hasImageError })}
         >
-          <Avatar
+          <img
             src={`${previewUrl}?t=${refreshKey}`}
             alt={t('avatar')}
-            sx={{
+            style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
@@ -310,28 +325,18 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       );
     }
 
-    // اگر آواتار قبلی داشته باشیم و هنوز خطا نداشته باشیم، آن را نمایش می‌دهیم
     if (currentAvatar && !hasImageError) {
-      // اضافه کردن پارامتر زمان برای جلوگیری از کش
       const imageSrc = `${getImageUrl(currentAvatar)}?t=${refreshKey}`;
       
       return (
         <Box
-          sx={{
-            width: size,
-            height: size,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
-            borderRadius: '50%',
-          }}
+          sx={boxStyle}
           className={clsx('avatar-preview', { 'has-error': hasImageError })}
         >
-          <Avatar
+          <img
             src={imageSrc}
             alt={t('avatar')}
-            sx={{
+            style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
@@ -342,12 +347,16 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       );
     }
 
-    // در نهایت آواتار پیش‌فرض را نمایش می‌دهیم
+    // استفاده از FallbackAvatar با اندازه مناسب
     return (
       <FallbackAvatar
         name={user?.fullName || ''}
         size={size}
-        sx={{ width: '100%', height: '100%' }}
+        sx={{ 
+          width: size, 
+          height: size, 
+          margin: '0 auto' 
+        }}
       />
     );
   };
