@@ -1,39 +1,44 @@
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
+
 export interface User {
-  id: string;
+  id: number;
   username: string;
   fullName: string;
+  role: string;
   email?: string;
   phone?: string;
-  isActive: boolean;
-  role: string;
   avatar?: string;
-  _avatarUpdated?: number;
+  isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  _avatarUpdated?: number;
 }
 
 export interface CreateUserInput {
   username: string;
   password: string;
   fullName: string;
-  email: string;
-  phone: string;
-  isActive: boolean;
-  role?: UserRole;
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+  role?: string;
   avatar?: string;
+  _avatarUpdated?: number;
 }
 
 export interface UpdateUserInput {
-  fullName: string;
-  email: string;
-  phone: string;
+  fullName?: string;
   password?: string;
-  isActive: boolean;
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+  role?: string;
   avatar?: string;
-  role?: UserRole;
+  _avatarUpdated?: number;
 }
-
-export type UserRole = 'ADMIN' | 'USER';
 
 export const getRoleName = (role: UserRole): string => {
   switch (role) {

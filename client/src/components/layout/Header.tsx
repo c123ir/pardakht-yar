@@ -14,6 +14,10 @@ import {
   ListItemIcon,
   ListItemText,
   useMediaQuery,
+  Button,
+  Typography,
+  Avatar,
+  Chip,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -24,11 +28,13 @@ import {
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
   Refresh as RefreshIcon,
+  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import AnimatedLogo from './AnimatedLogo';
 import UserAvatar from '../common/UserAvatar';
+import CSSAnimation from '../common/CSSAnimation';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -52,16 +58,29 @@ const Header: React.FC<HeaderProps> = ({
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
   useEffect(() => {
-    setAvatarRefreshKey(Date.now());
-    forceUpdate();
-    
-    const timer = setTimeout(() => {
+    if (user?.avatar || user?._avatarUpdated) {
       setAvatarRefreshKey(Date.now());
       forceUpdate();
-    }, 500);
-    
-    return () => clearTimeout(timer);
+      
+      const timer = setTimeout(() => {
+        setAvatarRefreshKey(Date.now());
+        forceUpdate();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
   }, [user?.avatar, user?._avatarUpdated, user?.id]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user?.avatar) {
+        setAvatarRefreshKey(Date.now());
+        forceUpdate();
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -82,6 +101,16 @@ const Header: React.FC<HeaderProps> = ({
   const handleLogout = () => {
     handleClose();
     logout();
+  };
+
+  const handleRefreshAvatar = () => {
+    setAvatarRefreshKey(Date.now());
+    forceUpdate();
+    
+    setTimeout(() => {
+      setAvatarRefreshKey(Date.now());
+      forceUpdate();
+    }, 100);
   };
 
   const notifications = [
@@ -149,7 +178,7 @@ const Header: React.FC<HeaderProps> = ({
         </Box>
 
         {/* سمت چپ - پروفایل و تنظیمات */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {/* تغییر تم */}
           {onToggleTheme && (
             <Tooltip title={isDarkMode ? 'حالت روشن' : 'حالت تاریک'}>
@@ -278,109 +307,183 @@ const Header: React.FC<HeaderProps> = ({
           </Menu>
           
           {/* پروفایل کاربر */}
-          <Tooltip title="پروفایل کاربر">
+          <CSSAnimation animation="fadeIn" duration={0.5}>
             <Box sx={{ position: 'relative' }}>
-              <UserAvatar 
-                avatar={user?.avatar}
-                name={user?.fullName || ''}
-                size={36}
-                key={`header-avatar-${avatarRefreshKey}`}
-                forceRefresh={true}
-              />
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setAvatarRefreshKey(Date.now());
-                  forceUpdate();
-                }}
-                sx={{
-                  position: 'absolute',
-                  top: -6,
-                  right: -6,
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main,
-                  width: 16,
-                  height: 16,
-                  padding: 0,
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+              <Tooltip title="پروفایل کاربر">
+                <IconButton
+                  onClick={handleMenu}
+                  sx={{
+                    p: 0.5,
+                    border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    borderRadius: '12px',
+                    transition: 'all 0.3s ease',
+                    transform: 'scale(1)',
+                    '&:hover': {
+                      border: `2px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+                      transform: 'scale(1.05)',
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
+                    }
+                  }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <UserAvatar 
+                      avatar={user?.avatar}
+                      name={user?.fullName || ''}
+                      size={36}
+                      key={`avatar-${avatarRefreshKey}`}
+                      forceRefresh={true}
+                    />
+                  </Box>
+                </IconButton>
+              </Tooltip>
+              
+              {/* دکمه رفرش آواتار */}
+              <Tooltip title="به‌روزرسانی آواتار">
+                <IconButton
+                  size="small"
+                  onClick={handleRefreshAvatar}
+                  sx={{
+                    position: 'absolute',
+                    right: -10,
+                    bottom: -8,
+                    bgcolor: alpha(theme.palette.background.paper, 0.9),
+                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.1)}`,
+                    width: 22,
+                    height: 22,
+                    fontSize: '0.75rem',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      transform: 'rotate(180deg)',
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    }
+                  }}
+                >
+                  <RefreshIcon fontSize="inherit" />
+                </IconButton>
+              </Tooltip>
+
+              {/* منوی پروفایل */}
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 230,
+                    maxWidth: 280,
+                    background: alpha(theme.palette.background.paper, 0.9),
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.2)}`,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                   }
                 }}
+                transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
               >
-                <RefreshIcon fontSize="small" sx={{ fontSize: 12 }} />
-              </IconButton>
+                <Box sx={{ 
+                  px: 2, 
+                  py: 2, 
+                  textAlign: 'center',
+                  background: theme => alpha(theme.palette.primary.main, 0.05),
+                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                }}>
+                  <Box sx={{ position: 'relative', display: 'inline-block', mb: 1 }}>
+                    <UserAvatar 
+                      avatar={user?.avatar}
+                      name={user?.fullName || 'کاربر مهمان'}
+                      size={64}
+                      key={`profile-menu-avatar-${avatarRefreshKey}`}
+                      forceRefresh={true}
+                      sx={{
+                        mx: 'auto',
+                        border: `3px solid ${alpha(theme.palette.background.paper, 0.9)}`,
+                        boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}`,
+                      }}
+                    />
+                    <Tooltip title="به‌روزرسانی آواتار">
+                      <IconButton
+                        size="small"
+                        onClick={handleRefreshAvatar}
+                        sx={{
+                          position: 'absolute',
+                          right: -8,
+                          bottom: -4,
+                          bgcolor: alpha(theme.palette.background.paper, 0.9),
+                          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                          boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.1)}`,
+                          width: 24,
+                          height: 24,
+                          fontSize: '0.85rem',
+                          '&:hover': {
+                            transform: 'rotate(180deg)',
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          }
+                        }}
+                      >
+                        <RefreshIcon fontSize="inherit" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Typography 
+                    variant="subtitle1" 
+                    fontWeight="bold" 
+                    sx={{ mb: 0.5 }}
+                  >
+                    {user?.fullName || 'کاربر مهمان'}
+                  </Typography>
+                  <Typography 
+                    variant="caption" 
+                    display="block" 
+                    color="textSecondary"
+                    sx={{ mb: 0.5 }}
+                  >
+                    {user?.username}
+                  </Typography>
+                  <Chip 
+                    size="small" 
+                    label={user?.role === 'ADMIN' ? 'مدیر سیستم' : 'کاربر عادی'} 
+                    color={user?.role === 'ADMIN' ? 'primary' : 'default'}
+                    variant="outlined"
+                    sx={{ 
+                      borderRadius: '4px',
+                      height: 20,
+                      fontSize: '0.7rem'
+                    }}
+                  />
+                </Box>
+  
+                <MenuItem onClick={handleClose} sx={{ py: 1.5 }}>
+                  <ListItemIcon>
+                    <PersonIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="پروفایل کاربری" />
+                </MenuItem>
+                <MenuItem onClick={handleClose} sx={{ py: 1.5 }}>
+                  <ListItemIcon>
+                    <DashboardIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="داشبورد" />
+                </MenuItem>
+                <MenuItem onClick={handleClose} sx={{ py: 1.5 }}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="تنظیمات" />
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
+                  <ListItemIcon>
+                    <LogoutIcon fontSize="small" color="error" />
+                  </ListItemIcon>
+                  <ListItemText primary="خروج از سیستم" primaryTypographyProps={{ color: 'error' }} />
+                </MenuItem>
+              </Menu>
             </Box>
-          </Tooltip>
-          
-          {/* منوی پروفایل */}
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-            PaperProps={{
-              sx: {
-                mt: 1.5,
-                minWidth: 200,
-                background: alpha(theme.palette.background.paper, 0.9),
-                backdropFilter: 'blur(8px)',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.2)}`,
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              }
-            }}
-            transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-          >
-            <Box sx={{ px: 2, py: 2, textAlign: 'center' }}>
-              <UserAvatar 
-                avatar={user?.avatar}
-                name={user?.fullName || 'کاربر مهمان'}
-                size={60}
-                key={`profile-menu-avatar-${avatarRefreshKey}`}
-                forceRefresh={true}
-                sx={{
-                  mx: 'auto',
-                  mb: 1,
-                  bgcolor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                }}
-              />
-              <ListItemText 
-                primary={user?.fullName || 'کاربر مهمان'}
-                secondary={user?.username}
-                primaryTypographyProps={{ 
-                  variant: 'subtitle1',
-                  fontWeight: 'bold',
-                  textAlign: 'center'
-                }}
-                secondaryTypographyProps={{ 
-                  variant: 'caption',
-                  textAlign: 'center'
-                }}
-              />
-            </Box>
-            <Divider />
-            <MenuItem onClick={handleClose}>
-              <ListItemIcon>
-                <PersonIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="پروفایل" />
-            </MenuItem>
-            <MenuItem onClick={handleClose}>
-              <ListItemIcon>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="تنظیمات" />
-            </MenuItem>
-            <Divider />
-            <MenuItem onClick={handleLogout}>
-              <ListItemIcon>
-                <LogoutIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="خروج" />
-            </MenuItem>
-          </Menu>
+          </CSSAnimation>
         </Box>
       </Toolbar>
     </AppBar>

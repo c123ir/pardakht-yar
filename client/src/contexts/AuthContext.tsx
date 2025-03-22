@@ -13,6 +13,11 @@ interface User {
   username: string;
   fullName: string;
   role: string;
+  avatar?: string; // اضافه کردن فیلد آواتار
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+  _avatarUpdated?: number; // اضافه کردن فیلد برای رفرش آواتار
 }
 
 interface AuthContextType {
@@ -144,7 +149,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // تابع به‌روزرسانی اطلاعات کاربر
   const updateUserDetails = useCallback((updatedUser: User) => {
     console.log('Updating user details:', updatedUser);
-    setUser(updatedUser);
+    
+    // ذخیره اطلاعات جدید کاربر در localStorage
+    localStorage.setItem('user', JSON.stringify({
+      ...updatedUser,
+      _avatarUpdated: Date.now() // اضافه کردن timestamp برای مجبور کردن به رفرش آواتار
+    }));
+    
+    // به‌روزرسانی state
+    setUser(prev => ({
+      ...prev,
+      ...updatedUser,
+      _avatarUpdated: Date.now()
+    }));
+
+    // اعمال به‌روزرسانی بعد از کمی تأخیر برای اطمینان از اعمال تغییرات
+    setTimeout(() => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error parsing stored user after update:', error);
+        }
+      }
+    }, 100);
   }, []);
 
   return (

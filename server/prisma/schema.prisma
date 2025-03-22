@@ -293,3 +293,102 @@ enum PaymentStatus {
   PAID
   REJECTED
 }
+
+model ContactGroup {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  createdBy   Int
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  creator     User              @relation(fields: [createdBy], references: [id])
+  members     ContactGroupMember[]
+}
+
+model ContactGroupMember {
+  id          Int          @id @default(autoincrement())
+  groupId     Int
+  contactType String       // USER, CONTACT, EXTERNAL
+  contactId   Int?         // برای USER و CONTACT
+  name        String?      // برای EXTERNAL
+  phone       String
+  group       ContactGroup @relation(fields: [groupId], references: [id])
+  user        User?        @relation(fields: [contactId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+}
+
+model SmsTemplate {
+  id          Int       @id @default(autoincrement())
+  title       String    // عنوان قالب
+  content     String    // متن قالب
+  variables   String[]  // متغیرهای قابل جایگزینی در قالب
+  description String?   // توضیحات
+  category    String    // دسته‌بندی (مثلاً پرداخت، اطلاع‌رسانی و...)
+  isActive    Boolean   @default(true)
+  createdBy   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  creator     User      @relation(fields: [createdBy], references: [id])
+}
+
+model SmsLog {
+  id            Int       @id @default(autoincrement())
+  receiver      String    // شماره گیرنده
+  message       String    // متن پیامک
+  messageId     String?   // شناسه پیامک در سرویس دهنده
+  status        SmsStatus @default(SENT)
+  statusDetails String?   // جزئیات وضعیت
+  provider      String    // سرویس دهنده پیامک
+  senderNumber  String    // شماره فرستنده
+  sentAt        DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  relatedTo     String?   // نوع موضوع مرتبط (مثل Payment, Request و...)
+  relatedId     Int?      // شناسه موضوع مرتبط
+  cost          Float?    // هزینه ارسال
+  userId        Int?      // کاربر ارسال کننده (اگر دستی ارسال شده)
+  user          User?     @relation(fields: [userId], references: [id])
+}
+
+enum SmsStatus {
+  SENT          // ارسال شده
+  DELIVERED     // تحویل داده شده
+  FAILED        // ناموفق
+  PENDING       // در صف ارسال
+  EXPIRED       // منقضی شده
+  BLOCKED       // مسدود شده
+  UNDELIVERED   // تحویل داده نشده
+}
+
+model SmsSchedule {
+  id           Int                  @id @default(autoincrement())
+  title        String               // عنوان برنامه
+  message      String               // متن پیامک
+  recipients   String[]             // شماره‌های گیرندگان
+  scheduleTime DateTime             // زمان ارسال
+  isRecurring  Boolean              @default(false)
+  recurrence   SmsScheduleRecurrence?
+  status       SmsScheduleStatus    @default(PENDING)
+  createdBy    Int
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  creator      User                 @relation(fields: [createdBy], references: [id])
+}
+
+model SmsScheduleRecurrence {
+  id           Int          @id @default(autoincrement())
+  scheduleId   Int          @unique
+  schedule     SmsSchedule  @relation(fields: [scheduleId], references: [id])
+  frequency    String       // روزانه، هفتگی، ماهانه
+  interval     Int          @default(1)
+  daysOfWeek   Int[]        // روزهای هفته (۰-۶)
+  daysOfMonth  Int[]        // روزهای ماه (۱-۳۱)
+  startDate    DateTime
+  endDate      DateTime?
+}
+
+enum SmsScheduleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  RUNNING
+}

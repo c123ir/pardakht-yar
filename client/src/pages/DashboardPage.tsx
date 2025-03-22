@@ -39,8 +39,17 @@ const Header = ({ date }: { date: Date }) => {
       month: 'long' as const, 
       day: 'numeric' as const 
     };
-    return new Intl.DateTimeFormat('fa-IR', options).format(date);
+    const dateFormatter = new Intl.DateTimeFormat('fa-IR', options);
+    const parts = dateFormatter.formatToParts(date);
     
+    // پیدا کردن اجزای تاریخ
+    const weekday = parts.find(part => part.type === 'weekday')?.value || '';
+    const day = parts.find(part => part.type === 'day')?.value || '';
+    const month = parts.find(part => part.type === 'month')?.value || '';
+    const year = parts.find(part => part.type === 'year')?.value || '';
+    
+    // ترکیب اجزا با ترتیب جدید
+    return `${weekday} ، ${day} ${month} ${year}`;
   };
   
   const greeting = () => {
@@ -99,7 +108,7 @@ const Header = ({ date }: { date: Date }) => {
               {`${greeting()}، ${user?.fullName || 'کاربر گرامی'}`}
             </Typography>
             <Typography variant="body1">
-              {formatDate()}
+              {formatDate() }
             </Typography>
           </Grid>
           <Grid item xs={12} md={6} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
