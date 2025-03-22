@@ -11,7 +11,7 @@ dotenv.config();
 export default {
   // تنظیمات سرور
   server: {
-    port: process.env.PORT || 5050,
+    port: process.env.PORT || 5051,
     nodeEnv: process.env.NODE_ENV || 'development',
     clientUrl: process.env.CLIENT_URL || 'http://localhost:3030',
   },

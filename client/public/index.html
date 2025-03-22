@@ -2,29 +2,151 @@
 <html lang="fa" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="سیستم مدیریت واریزی‌ها و طرف‌حساب‌ها" />
-    <link rel="stylesheet" href="/fonts/fontiran.css" />
-    <link rel="stylesheet" href="/fonts/vazirmatn.css" />
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
+    <title>پرداخت‌یار - مدیریت خدمات پرداخت</title>
     <style>
-      html, body {
-        direction: rtl;
+      * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        overflow-x: hidden;
       }
-      #root {
+      
+      body, html {
         direction: rtl;
+        font-family: 'IRANSansX', 'Tahoma', sans-serif;
+      }
+      
+      #root {
         min-height: 100vh;
       }
     </style>
-    <title>پرداخت‌یار | سیستم مدیریت واریزی‌ها و طرف‌حساب‌ها</title>
+    <script>
+      /* تغییر در Service Worker - جلوگیری از اجرای سرویس ورکر */
+      window.addEventListener('beforeunload', function(event) {
+        console.log('صفحه در حال بارگذاری مجدد است، سرویس ورکر را غیرفعال می‌کنیم');
+        sessionStorage.setItem('force_sw_disable', 'true');
+      });
+      
+      /* پاکسازی کش و غیرفعال کردن کامل سرویس ورکر */
+      (function clearCacheAndDisableServiceWorker() {
+        // ثبت پیام در کنسول
+        console.log('شروع پاکسازی کش و غیرفعال‌سازی سرویس ورکر...');
+        
+        // پاکسازی Session Storage
+        if (sessionStorage.getItem('cached_pages')) {
+          console.log('پاکسازی آدرس‌های ذخیره شده در session storage');
+          sessionStorage.removeItem('cached_pages');
+        }
+        
+        // پاکسازی کش‌های مرورگر
+        if ('caches' in window) {
+          console.log('شروع پاکسازی تمام کش‌های مرورگر...');
+          caches.keys().then(function(cacheNames) {
+            return Promise.all(
+              cacheNames.map(function(cacheName) {
+                console.log('حذف کش:', cacheName);
+                return caches.delete(cacheName);
+              })
+            );
+          }).then(function() {
+            console.log('تمام کش‌ها با موفقیت پاک شدند');
+          }).catch(function(err) {
+            console.error('خطا در پاکسازی کش:', err);
+          });
+        }
+        
+        // غیرفعال کردن سرویس ورکر
+        if ('serviceWorker' in navigator) {
+          console.log('غیرفعال کردن سرویس ورکر...');
+          
+          // ابتدا مطمئن شویم که تمام فتچ‌های در حال انجام تمام شده‌اند
+          window.addEventListener('load', function() {
+            // حذف تمام سرویس ورکرهای ثبت شده
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              console.log('تعداد سرویس ورکرهای موجود:', registrations.length);
+              
+              const unregisterPromises = registrations.map(function(registration) {
+                return registration.unregister().then(function(success) {
+                  console.log('سرویس ورکر با موفقیت حذف شد:', success);
+                  return success;
+                });
+              });
+              
+              return Promise.all(unregisterPromises);
+            }).then(function() {
+              console.log('تمام سرویس ورکرها غیرفعال شدند');
+              
+              // بلوکه کردن fetch های سرویس ورکر
+              if (navigator.serviceWorker.controller) {
+                console.log('کنترلر سرویس ورکر غیرفعال شد');
+                navigator.serviceWorker.controller = null;
+              }
+              
+              // جایگزینی تابع فتچ
+              const originalFetch = window.fetch;
+              window.fetch = function() {
+                console.log('استفاده از fetch اصلی بدون سرویس ورکر');
+                return originalFetch.apply(this, arguments);
+              };
+              
+              console.log('سرویس ورکر با موفقیت غیرفعال شد');
+              
+              // ثبت سرویس ورکر جدید که تمام درخواست‌ها را به شبکه ارسال می‌کند
+              navigator.serviceWorker.register('/js/sw.js').then(function(registration) {
+                console.log('سرویس ورکر جدید با موفقیت ثبت شد:', registration.scope);
+              }).catch(function(error) {
+                console.error('خطا در ثبت سرویس ورکر جدید:', error);
+              });
+              
+              // در صورت ریدایرکت قبلی، بارگذاری مجدد صفحه
+              if (sessionStorage.getItem('swRedirect') === 'true') {
+                console.log('بارگذاری مجدد صفحه پس از غیرفعال کردن سرویس ورکر');
+                sessionStorage.removeItem('swRedirect');
+                setTimeout(function() {
+                  window.location.reload();
+                }, 500);
+              } else {
+                // ثبت حالت ریدایرکت برای جلوگیری از حلقه بی‌نهایت
+                sessionStorage.setItem('swRedirect', 'true');
+                setTimeout(function() {
+                  sessionStorage.removeItem('swRedirect');
+                }, 3000);
+              }
+            }).catch(function(err) {
+              console.error('خطا در غیرفعال کردن سرویس ورکر:', err);
+            });
+          });
+        }
+      })();
+      
+      /* اضافه کردن آواتار پیش‌فرض به صورت داینامیک */
+      (function createDefaultAvatar() {
+        if (!document.querySelector('link[data-avatar]')) {
+          const defaultAvatar = document.createElement('link');
+          defaultAvatar.rel = 'preload';
+          defaultAvatar.href = '/avatar.jpg';
+          defaultAvatar.as = 'image';
+          defaultAvatar.setAttribute('data-avatar', 'true');
+          document.head.appendChild(defaultAvatar);
+          
+          // ساخت عکس پیش‌فرض
+          const img = new Image();
+          img.onload = function() {
+            console.log('آواتار پیش‌فرض با موفقیت بارگذاری شد');
+          };
+          img.onerror = function() {
+            console.error('خطا در بارگذاری آواتار پیش‌فرض');
+          };
+          img.src = '/avatar.jpg';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.html"></script>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

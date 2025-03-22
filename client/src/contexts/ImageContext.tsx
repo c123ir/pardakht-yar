@@ -1,13 +1,14 @@
 // client/src/contexts/ImageContext.tsx
 // کانتکست مدیریت تصاویر برای استفاده در کل پروژه
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import userService from '../services/userService';
+import { API_URL } from '../config';
 
 export interface ImageContextType {
   isUploading: boolean;
   uploadProgress: number;
-  uploadAvatar: (file: File) => Promise<string>;
+  uploadAvatar: (file: File, userId?: string) => Promise<{ path: string }>;
   uploadImage: (file: File, folder?: string) => Promise<string>;
   getImageUrl: (relativePath: string | null | undefined) => string;
 }
@@ -30,8 +31,23 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   
+  // تنظیمات از متغیرهای محیطی
+  const useUiAvatars = import.meta.env.VITE_USE_UI_AVATARS === 'true';
+  const uiAvatarsUrl = import.meta.env.VITE_UI_AVATARS_URL || 'https://ui-avatars.com/api';
+  
+  // تابع دریافت آواتار از سرویس UI Avatars
+  const getUiAvatarUrl = useCallback((name: string, size: number = 100): string => {
+    const params = new URLSearchParams({
+      name,
+      size: String(size),
+      background: 'random',
+      color: 'ffffff',
+    });
+    return `${uiAvatarsUrl}?${params.toString()}`;
+  }, [uiAvatarsUrl]);
+  
   // آپلود آواتار پروفایل
-  const uploadAvatar = async (file: File): Promise<string> => {
+  const uploadAvatar = async (file: File, userId?: string): Promise<{ path: string }> => {
     setIsUploading(true);
     setUploadProgress(0);
     
@@ -39,11 +55,11 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
       const formData = new FormData();
       formData.append('avatar', file);
       
-      // بعد از پیاده‌سازی کامل کامپوننت و API، این فانکشن باید پیشرفت آپلود را نیز گزارش دهد
-      const result = await userService.uploadAvatar(formData);
+      // اضافه کردن شناسه کاربر در صورت وجود (برای ادمین)
+      const result = await userService.uploadAvatar(formData, userId);
       
       setUploadProgress(100);
-      return result.path;
+      return result;
     } catch (error) {
       console.error('Error uploading avatar:', error);
       throw error;
@@ -82,39 +98,40 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
     }
   };
   
-  // تبدیل مسیر نسبی تصویر به URL کامل
-  const getImageUrl = (relativePath: string | null | undefined): string => {
-    if (!relativePath) {
-      console.log('No relative path provided');
-      return '';
+  // تبدیل مسیر نسبی به URL کامل
+  const getImageUrl = useCallback((path?: string | null): string => {
+    if (!path) {
+      // اگر مسیر نداریم از آواتار پیش‌فرض استفاده می‌کنیم
+      return '/avatar.jpg';
     }
     
-    // اگر مسیر با http شروع شده باشد، به صورت مستقیم برگردانده می‌شود
-    if (relativePath.startsWith('http')) {
-      return relativePath;
+    // بررسی می‌کنیم آیا مسیر یک URL کامل است
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      // حتی برای URL های کامل، یک پارامتر زمان اضافه می‌کنیم تا کش نشوند
+      const separator = path.includes('?') ? '&' : '?';
+      return `${path}${separator}t=${Date.now()}&nocache=true`;
     }
     
-    // آدرس سرور
-    const serverUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5050';
+    // اگر مسیر با '/' شروع نشده باشد، اضافه می‌کنیم
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     
-    // اطمینان از شروع مسیر با /uploads/
-    const normalizedPath = relativePath.startsWith('/') ? relativePath : 
-      relativePath.startsWith('uploads/') ? `/${relativePath}` : `/uploads/${relativePath}`;
+    // اگر مسیر آواتار است
+    if (normalizedPath.includes('/avatars/')) {
+      // تنظیم URL کامل برای تصویر آواتار
+      const baseUrl = API_URL.replace('/api', '');
+      
+      // برای جلوگیری از مشکل کش، یک تایم استمپ اضافه می‌کنیم و مقدار آن را کاملاً تصادفی می‌کنیم
+      const timestamp = Date.now();
+      const randomValue = Math.floor(Math.random() * 1000000);
+      const fullUrl = `${baseUrl}${normalizedPath}?t=${timestamp}&r=${randomValue}&nocache=true`;
+      
+      return fullUrl;
+    }
     
-    // ساخت آدرس کامل تصویر
-    const fullUrl = `${serverUrl}${normalizedPath}`;
-    
-    // برای دیباگ
-    console.log('Image URL construction:', {
-      serverUrl,
-      relativePath,
-      normalizedPath,
-      fullUrl,
-      env: import.meta.env.VITE_API_URL
-    });
-    
-    return fullUrl;
-  };
+    // برای سایر تصاویر، مسیر را به URL API اضافه می‌کنیم
+    const baseUrl = API_URL.replace('/api', '');
+    return `${baseUrl}${normalizedPath}?t=${Date.now()}&nocache=true`;
+  }, []);
   
   return (
     <ImageContext.Provider

@@ -58,6 +58,7 @@ const UsersPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userInput, setUserInput] = useState<CreateUserInput>(initialUserInput);
+  const [forceAvatarRefresh, setForceAvatarRefresh] = useState(0);
 
   useEffect(() => {
     fetchUsers();
@@ -124,57 +125,49 @@ const UsersPage: React.FC = () => {
 
   // تغییر آواتار کاربر
   const handleAvatarChange = (avatarPath: string) => {
-    // به‌روزرسانی state فرم
+    console.log('دریافت مسیر آواتار جدید در UsersPage:', avatarPath);
+
+    // فقط state فرم را به‌روزرسانی کنید
     setUserInput(prev => ({
       ...prev,
       avatar: avatarPath,
     }));
 
-    // اگر در حالت ویرایش هستیم و کاربری انتخاب شده است
-    if (dialogState.mode === 'edit' && selectedUser) {
-      try {
-        // به‌روزرسانی فوری اطلاعات کاربر در سرور
-        const updateData: UpdateUserInput = { 
-          fullName: userInput.fullName,
-          email: userInput.email,
-          phone: userInput.phone,
-          isActive: userInput.isActive,
-          avatar: avatarPath 
-        };
-        
-        userService.updateUser(selectedUser.id, updateData)
-          .then(updatedUser => {
-            // به‌روزرسانی لیست کاربران
-            setUsers(prev => prev.map(u => 
-              u.id === selectedUser.id ? { ...u, avatar: avatarPath } : u
-            ));
-            
-            // به‌روزرسانی اطلاعات کاربر انتخاب شده
-            setSelectedUser(prev => prev ? { ...prev, avatar: avatarPath } : null);
-            
-            showNotification({
-              message: 'تصویر کاربر با موفقیت به‌روزرسانی شد',
-              type: 'success',
-            });
-          })
-          .catch(error => {
-            showNotification({
-              message: (error as Error).message || 'خطا در به‌روزرسانی آواتار',
-              type: 'error',
-            });
-          });
-      } catch (error) {
-        showNotification({
-          message: (error as Error).message || 'خطا در به‌روزرسانی آواتار',
-          type: 'error',
-        });
-      }
-    }
+    // حذف به‌روزرسانی مستقیم users و selectedUser از اینجا
+    // if (dialogState.mode === 'edit' && selectedUser) {
+    //   // به‌روزرسانی لیست کاربران در UI با ایجاد مرجع جدید برای هر آبجکت
+    //   setUsers(prev => {
+    //     return prev.map(u => {
+    //       if (u.id === selectedUser.id) {
+    //         // ایجاد یک آبجکت کاملاً جدید
+    //         return { ...u, avatar: avatarPath, _avatarUpdated: Date.now() };
+    //       }
+    //       return u;
+    //     });
+    //   });
+
+    //   // به‌روزرسانی اطلاعات کاربر انتخاب شده با ایجاد مرجع جدید
+    //   setSelectedUser(prev => {
+    //     if (!prev) return null;
+    //     return { ...prev, avatar: avatarPath, _avatarUpdated: Date.now() };
+    //   });
+
+    //   // افزایش شمارنده رفرش آواتار برای مجبور کردن همه آواتارها به بارگذاری مجدد
+    //   setForceAvatarRefresh(prev => prev + 1);
+
+    //   setUsers(prev => [...prev]); // رفرش فوری لیست کاربران
+    //   setForceAvatarRefresh(prev => prev + 1); // افزایش فوری شمارنده رفرش آواتار
+
+    //   showNotification({
+    //     message: 'تصویر کاربر با موفقیت به‌روزرسانی شد',
+    //     type: 'success',
+    //   });
+    // }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (dialogState.mode === 'create') {
         const newUser = await userService.createUser(userInput);
@@ -189,14 +182,21 @@ const UsersPage: React.FC = () => {
           email: userInput.email,
           phone: userInput.phone,
           isActive: userInput.isActive,
+          avatar: userInput.avatar, // ارسال مسیر آواتار جدید به سرور
         };
-        
+
         if (userInput.password) {
           updateData.password = userInput.password;
         }
-        
+
         const updatedUser = await userService.updateUser(selectedUser.id, updateData);
-        setUsers(prev => prev.map(user => user.id === updatedUser.id ? updatedUser : user));
+
+        // به‌روزرسانی لیست کاربران و کاربر انتخاب شده با آواتار جدید بعد از دریافت پاسخ موفقیت‌آمیز از سرور
+        setUsers(prev => prev.map(user =>
+          user.id === updatedUser.id ? { ...updatedUser, _avatarUpdated: Date.now() } : user
+        ));
+        setSelectedUser(updatedUser); // کاربر انتخاب شده را نیز به‌روزرسانی کنید
+
         showNotification({
           message: 'اطلاعات کاربر با موفقیت به‌روزرسانی شد',
           type: 'success',
@@ -264,7 +264,13 @@ const UsersPage: React.FC = () => {
                   users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
-                        <UserAvatar user={user} size={40} />
+                        <UserAvatar
+                          avatar={user.avatar}
+                          name={user.fullName}
+                          size={40}
+                          key={`${user.id}-${user._avatarUpdated || ''}-${forceAvatarRefresh}`}
+                          forceRefresh={true}
+                        />
                       </TableCell>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.fullName}</TableCell>
@@ -299,6 +305,7 @@ const UsersPage: React.FC = () => {
               <AvatarUploader
                 currentAvatar={userInput.avatar}
                 onAvatarChange={handleAvatarChange}
+                userId={selectedUser?.id}
                 size={120}
               />
             </Box>

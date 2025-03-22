@@ -1,84 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar as MuiAvatar, AvatarProps as MuiAvatarProps } from '@mui/material';
+import { Avatar, SxProps, Theme } from '@mui/material';
 import { useImages } from '../../contexts/ImageContext';
+import FallbackAvatar from './FallbackAvatar';
 
-interface UserAvatarProps extends Omit<MuiAvatarProps, 'src'> {
-  user?: {
-    fullName?: string;
-    avatar?: string | null;
-  } | null;
+interface UserAvatarProps {
+  avatar?: string | null;
+  name?: string;
   size?: number;
+  sx?: SxProps<Theme>;
+  showFallback?: boolean;
+  forceRefresh?: boolean;
 }
 
-export const UserAvatar: React.FC<UserAvatarProps> = ({ 
-  user, 
+const UserAvatar: React.FC<UserAvatarProps> = ({
+  avatar,
+  name = '',
   size = 40,
-  sx,
-  ...props 
+  sx = {},
+  showFallback = true,
+  forceRefresh = false
 }) => {
   const { getImageUrl } = useImages();
-  const [imageError, setImageError] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [hasError, setHasError] = useState(false);
+  const [imgKey, setImgKey] = useState(Date.now()); // برای تجدید لود تصویر
 
+  // تنظیم مجدد خطا هرگاه آواتار تغییر می‌کند
   useEffect(() => {
-    if (user?.avatar) {
-      const url = getImageUrl(user.avatar);
-      console.log('Setting avatar URL:', url, 'for user:', user.fullName);
-      setAvatarUrl(url);
-      setImageError(false);
-    } else {
-      console.log('No avatar found for user:', user?.fullName);
-      setAvatarUrl(undefined);
-    }
-  }, [user?.avatar, getImageUrl]);
+    setHasError(false);
+    setImgKey(Date.now());
+  }, [avatar]);
 
-  const getInitials = (name?: string) => {
-    if (!name) return '';
-    const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
-      return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+  // هر بار که کامپوننت نمایش داده می‌شود، اگر forceRefresh فعال باشد کلید تصویر را تغییر می‌دهیم
+  useEffect(() => {
+    if (forceRefresh) {
+      setImgKey(Date.now());
     }
-    return nameParts[0][0].toUpperCase();
+  }, [forceRefresh]);
+
+  // زمانی که کامپوننت مانت می‌شود، imgKey را تنظیم می‌کنیم
+  useEffect(() => {
+    setImgKey(Date.now());
+  }, []);
+
+  // مدیریت خطای بارگذاری
+  const handleError = () => {
+    console.log('خطا در بارگذاری آواتار:', avatar);
+    setHasError(true);
   };
 
-  const hasAvatar = Boolean(user?.avatar && avatarUrl && !imageError);
-
-  const handleImageError = () => {
-    console.error('Avatar image failed to load:', {
-      url: avatarUrl,
-      user: user?.fullName,
-      avatar: user?.avatar
-    });
-    setImageError(true);
-    setAvatarUrl(undefined);
+  // بارگذاری مجدد تصویر
+  const reloadImage = () => {
+    setHasError(false);
+    setImgKey(Date.now());
   };
 
-  useEffect(() => {
-    console.log('Avatar state:', {
-      hasAvatar,
-      imageError,
-      avatarUrl,
-      userAvatar: user?.avatar
-    });
-  }, [hasAvatar, imageError, avatarUrl, user?.avatar]);
+  // اگر خطا داریم و showFallback فعال است، آواتار پیش‌فرض را نمایش دهیم
+  if ((hasError || !avatar) && showFallback) {
+    return <FallbackAvatar name={name} size={size} sx={sx} />;
+  }
+
+  // تبدیل مسیر نسبی به URL کامل با اضافه کردن پارامتر زمان برای جلوگیری از کش
+  const imageUrl = avatar ? getImageUrl(avatar) + `?t=${imgKey}&nocache=true` : '';
+
+  // مشخص کردن رفتار در صورت خطا - استفاده از آدرس نسبی (بدون URL کامل)
+  const fallbackPath = '/avatar.jpg';
 
   return (
-    <MuiAvatar
-      src={avatarUrl}
-      onError={handleImageError}
-      sx={{ 
-        width: size, 
+    <Avatar
+      key={imgKey}
+      src={hasError ? fallbackPath : imageUrl}
+      alt={name || 'کاربر'}
+      sx={{
+        width: size,
         height: size,
-        fontSize: size * 0.4,
-        bgcolor: hasAvatar ? 'primary.main' : '#FFD700',
-        color: hasAvatar ? 'primary.contrastText' : '#000000',
-        border: `2px solid ${hasAvatar ? 'transparent' : '#FFD700'}`,
         ...sx
       }}
-      {...props}
-    >
-      {!hasAvatar && getInitials(user?.fullName)}
-    </MuiAvatar>
+      onError={handleError}
+      onClick={hasError ? reloadImage : undefined}
+    />
   );
 };
 

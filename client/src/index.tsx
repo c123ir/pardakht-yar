@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles/global.css';
 import './styles/rtl.css';  // افزودن استایل RTL
+import './utils/i18n';
 
 // تنظیم جهت RTL برای کل صفحه
 document.dir = 'rtl';

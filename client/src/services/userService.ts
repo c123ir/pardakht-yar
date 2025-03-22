@@ -3,6 +3,7 @@
 
 import axios from '../utils/axios';
 import { User, CreateUserInput, UpdateUserInput } from '../types/user';
+import api from '../utils/api';
 
 // دریافت لیست کاربران
 const getUsers = async (): Promise<User[]> => {
@@ -63,19 +64,32 @@ const deleteUser = async (id: string): Promise<void> => {
   }
 };
 
-// آپلود آواتار
-const uploadAvatar = async (formData: FormData): Promise<{ path: string }> => {
+// آپلود آواتار کاربر
+const uploadAvatar = async (formData: FormData, userId?: string): Promise<any> => {
   try {
-    const response = await axios.post('/users/avatar', formData, {
+    // اگر userId داریم، آن را هم اضافه می‌کنیم
+    if (userId) {
+      formData.append('userId', userId.toString());
+      console.log('Added userId to FormData:', userId);
+    }
+    
+    // برای اطمینان، محتوای FormData را بررسی می‌کنیم
+    for (const pair of formData.entries()) {
+      console.log('FormData entry:', pair[0], pair[1]);
+    }
+    
+    // ارسال درخواست
+    const response = await api.post('/users/upload-avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.data;
-  } catch (error: any) {
-    throw new Error(
-      error.response?.data?.message || 'خطا در آپلود تصویر'
-    );
+    
+    console.log('Avatar upload response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    throw error;
   }
 };
 

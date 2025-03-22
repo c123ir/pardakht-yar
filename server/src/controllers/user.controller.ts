@@ -1,8 +1,27 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import path from 'path';
+import fs from 'fs';
+import { ApiError } from '../utils/ApiError';
+import { Logger } from '../utils/logger';
 
+const logger = new Logger('UserController');
 const prisma = new PrismaClient();
+
+// تعریف تایپ برای user در درخواست
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: number;
+        username: string;
+        role: string;
+        id?: number; // برای سازگاری
+      };
+    }
+  }
+}
 
 // دریافت لیست کاربران
 export const getUsers = async (req: Request, res: Response) => {
@@ -216,58 +235,82 @@ export const deleteUser = async (req: Request, res: Response) => {
 // آپلود آواتار کاربر
 export const uploadAvatar = async (req: Request, res: Response) => {
   try {
-    // بررسی وجود فایل
+    // تایید وجود فایل آپلود شده
     if (!req.file) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'هیچ فایلی آپلود نشده است',
-      });
+      logger.warn('No file uploaded');
+      return res.status(400).json({ message: 'هیچ فایلی آپلود نشده است' });
     }
 
-    // آماده‌سازی مسیر نسبی برای ذخیره در دیتابیس
-    const relativePath = `/uploads/avatars/${req.file.filename}`;
-    
-    // دریافت شناسه کاربر از توکن
-    const userId = (req as any).user.userId;
+    // اطمینان از وجود دایرکتوری آپلود
+    const avatarDir = path.join(__dirname, '../../uploads/avatars');
     
     try {
-      // به‌روزرسانی آواتار کاربر در دیتابیس
-      await prisma.user.update({
-        where: { id: userId },
-        data: { avatar: relativePath },
-      });
-
-      // ارسال پاسخ موفقیت‌آمیز
-      res.json({
-        status: 'success',
-        data: {
-          filePath: relativePath,
-          originalName: req.file.originalname,
-        },
-      });
-    } catch (dbError) {
-      console.error('Error updating avatar in database:', dbError);
-      
-      // در صورت بروز خطا در دیتابیس، فایل آپلود شده را حذف می‌کنیم
-      const fs = require('fs');
-      const path = require('path');
-      const fullPath = path.join(__dirname, '../../', relativePath);
-      
-      try {
-        if (fs.existsSync(fullPath)) {
-          fs.unlinkSync(fullPath);
-        }
-      } catch (fsError) {
-        console.error('Error deleting uploaded file after db error:', fsError);
+      // بررسی و ایجاد دایرکتوری در صورت عدم وجود
+      if (!fs.existsSync(avatarDir)) {
+        logger.info(`Creating avatar directory at ${avatarDir}`);
+        fs.mkdirSync(avatarDir, { recursive: true });
+        logger.info('Avatar directory created successfully');
       }
-      
-      throw dbError;
+    } catch (error) {
+      logger.error('Error checking/creating avatar directory:', error);
+      return res.status(500).json({ message: 'خطا در ایجاد دایرکتوری آپلود' });
     }
-  } catch (error) {
-    console.error('Error uploading avatar:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'خطا در آپلود و ذخیره تصویر پروفایل',
+
+    // بررسی مجوز کاربر و تعیین userId هدف
+    let targetUserId = req.user?.userId;
+    
+    if (req.body.userId) {
+      // اگر userId در درخواست وجود دارد (توسط ادمین)
+      if (req.user?.role !== 'ADMIN') {
+        return res.status(403).json({ message: 'شما مجوز تغییر آواتار کاربران دیگر را ندارید' });
+      }
+      targetUserId = parseInt(req.body.userId);
+    }
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'شناسه کاربر مشخص نشده است' });
+    }
+
+    // دریافت اطلاعات کاربر
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
     });
+
+    if (!user) {
+      return res.status(404).json({ message: 'کاربر یافت نشد' });
+    }
+
+    // بررسی فایل آپلود شده
+    logger.info(`Avatar uploaded: ${req.file.originalname}, size: ${req.file.size}, path: ${req.file.path}`);
+    
+    // اطمینان از دسترس بودن فایل
+    try {
+      const stats = fs.statSync(req.file.path);
+      logger.info(`File stats: size=${stats.size}, isFile=${stats.isFile()}, permissions=${stats.mode.toString(8)}`);
+    } catch (statError) {
+      logger.error('Error checking file stats:', statError);
+    }
+
+    // مسیر نسبی برای دسترسی HTTP
+    const relativePath = `/uploads/avatars/${path.basename(req.file.path)}`;
+    logger.info(`Relative HTTP path for avatar: ${relativePath}`);
+
+    // به‌روزرسانی مسیر آواتار کاربر در دیتابیس
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { avatar: relativePath },
+    });
+
+    // پاسخ موفق
+    return res.status(200).json({
+      message: 'آواتار با موفقیت آپلود شد',
+      path: relativePath,
+      originalName: req.file.originalname,
+      userId: targetUserId,
+      fullName: user.fullName
+    });
+  } catch (error) {
+    logger.error('Error in uploadAvatar:', error);
+    return res.status(500).json({ message: 'خطا در آپلود آواتار' });
   }
 }; 

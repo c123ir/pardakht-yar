@@ -9,6 +9,7 @@ export interface User {
   avatar?: string;
   createdAt: string;
   updatedAt: string;
+  _avatarUpdated?: number;
 }
 
 export interface CreateUserInput {

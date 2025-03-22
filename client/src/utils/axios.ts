@@ -14,12 +14,18 @@ const instance = axios.create({
   timeout: 30000, // 30 ثانیه
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest' // برای تشخیص درخواست‌های XHR
   },
+  // فعال کردن ارسال credentials برای CORS
+  withCredentials: true
 });
 
 // اضافه کردن هدر احراز هویت به تمام درخواست‌ها
 instance.interceptors.request.use(
   (config) => {
+    console.log(`[Axios Request] ${config.method?.toUpperCase()} ${config.url}`);
+    
     const token = getAuthToken();
     
     if (token) {
@@ -29,6 +35,17 @@ instance.interceptors.request.use(
     } else {
       console.log('[Axios Interceptor] No token available, request without Authorization');
     }
+    
+    // اصلاح مسیر API برای جلوگیری از تکرار /api
+    if (config.url && config.url.startsWith('/api') && config.baseURL?.includes('/api')) {
+      config.url = config.url.replace(/^\/api/, '');
+      console.log('[Axios Interceptor] Fixing duplicated /api path:', config.url);
+    }
+    
+    // اضافه کردن پارامتر زمانی برای جلوگیری از کش
+    const timestamp = Date.now();
+    const separator = config.url?.includes('?') ? '&' : '?';
+    config.url = `${config.url}${separator}_t=${timestamp}`;
     
     return config;
   },
@@ -41,9 +58,26 @@ instance.interceptors.request.use(
 // پردازش خطاهای پاسخ
 instance.interceptors.response.use(
   (response) => {
+    console.log(`[Axios Response] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
     return response;
   },
   (error) => {
+    // لاگ خطا برای دیباگ
+    console.error('[Axios Error] Full error object:', error);
+    
+    // لاگ اضافی برای مشکلات CORS
+    if (error.message && error.message.includes('Network Error')) {
+      console.error('[Axios CORS Error] This might be a CORS issue - check server CORS settings');
+      // تلاش مجدد با تنظیمات متفاوت برای CORS
+      if (error.config && !error.config._retryWithoutCredentials) {
+        console.log('[Axios CORS] Retrying request without credentials...');
+        const newConfig = { ...error.config };
+        newConfig.withCredentials = false; // غیرفعال کردن credentials
+        newConfig._retryWithoutCredentials = true; // جلوگیری از حلقه بی‌نهایت
+        return instance(newConfig);
+      }
+    }
+    
     if (error.response) {
       // خطای سرور با کد وضعیت
       console.error(`[Axios Error] ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response.data);
@@ -96,6 +130,35 @@ instance.interceptors.response.use(
     } else if (error.request) {
       // درخواست ارسال شد اما پاسخی دریافت نشد
       console.error('[Axios Error] No response received:', error.request);
+      
+      // بررسی وضعیت اتصال به اینترنت
+      if (!navigator.onLine) {
+        console.error('[Axios Error] No internet connection');
+        // نمایش یک هشدار به کاربر
+        const offlineMessage = document.createElement('div');
+        offlineMessage.style.position = 'fixed';
+        offlineMessage.style.top = '20px';
+        offlineMessage.style.left = '50%';
+        offlineMessage.style.transform = 'translateX(-50%)';
+        offlineMessage.style.backgroundColor = '#ff9800';
+        offlineMessage.style.color = 'white';
+        offlineMessage.style.padding = '15px 30px';
+        offlineMessage.style.borderRadius = '4px';
+        offlineMessage.style.zIndex = '2000';
+        offlineMessage.style.fontFamily = 'Vazirmatn, Tahoma, sans-serif';
+        offlineMessage.style.direction = 'rtl';
+        offlineMessage.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+        offlineMessage.textContent = 'اتصال به اینترنت قطع شده است. لطفاً اتصال خود را بررسی کنید.';
+        
+        document.body.appendChild(offlineMessage);
+        
+        // حذف پیام پس از مدتی
+        setTimeout(() => {
+          if (offlineMessage.parentNode) {
+            document.body.removeChild(offlineMessage);
+          }
+        }, 5000);
+      }
     } else {
       // خطا در تنظیم درخواست
       console.error('[Axios Error] Request configuration error:', error.message);

@@ -276,8 +276,10 @@ const Header: React.FC<HeaderProps> = ({
               }}
             >
               <UserAvatar 
-                user={user}
+                avatar={user?.avatar}
+                name={user?.fullName || ''}
                 size={36}
+                key={Date.now()}
                 sx={{
                   bgcolor: theme.palette.primary.main,
                   color: theme.palette.primary.contrastText,
@@ -308,8 +310,10 @@ const Header: React.FC<HeaderProps> = ({
           >
             <Box sx={{ px: 2, py: 2, textAlign: 'center' }}>
               <UserAvatar 
-                user={user}
+                avatar={user?.avatar}
+                name={user?.fullName || ''}
                 size={60}
+                key={Date.now()}
                 sx={{
                   mx: 'auto',
                   mb: 1,

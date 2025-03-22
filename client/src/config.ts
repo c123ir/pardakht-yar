@@ -1,8 +1,8 @@
 // client/src/config.ts
 // تنظیمات سیستم
 
-// آدرس API
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+// آدرس API - اطمینان از عدم وجود / اضافی در انتها
+export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5050/api').replace(/\/$/, '');
 
 // تنظیمات عمومی
 export const APP_NAME = 'پرداخت‌یار';
