@@ -42,9 +42,9 @@ const createUser = async (userData: CreateUserInput): Promise<User> => {
 };
 
 // به‌روزرسانی کاربر
-const updateUser = async (id: string, userData: UpdateUserInput): Promise<User> => {
+const updateUser = async (id: string | number, userData: UpdateUserInput): Promise<User> => {
   try {
-    const response = await axios.put(`/users/${id}`, userData);
+    const response = await axios.put(`/users/${id.toString()}`, userData);
     return response.data.data;
   } catch (error: any) {
     throw new Error(
@@ -54,9 +54,9 @@ const updateUser = async (id: string, userData: UpdateUserInput): Promise<User> 
 };
 
 // حذف کاربر
-const deleteUser = async (id: string): Promise<void> => {
+const deleteUser = async (id: string | number): Promise<void> => {
   try {
-    await axios.delete(`/users/${id}`);
+    await axios.delete(`/users/${id.toString()}`);
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || 'خطا در حذف کاربر'

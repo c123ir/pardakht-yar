@@ -3,7 +3,7 @@
 
 import { User } from '@prisma/client';
 
-type Role = 'ADMIN' | 'FINANCIAL_MANAGER' | 'ACCOUNTANT' | 'SELLER' | 'CEO' | 'PROCUREMENT';
+type Role = 'ADMIN' | 'FINANCIAL_MANAGER' | 'ACCOUNTANT' | 'SELLER' | 'CEO' | 'PROCUREMENT' | 'USER';
 
 declare global {
   namespace Express {
@@ -12,14 +12,6 @@ declare global {
       username: string;
       fullName: string;
       role: Role;
-    }
-
-    interface Request {
-      user?: {
-        userId: number;
-        username: string;
-        role: Role;
-      };
     }
   }
 }

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, useTheme, keyframes } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 
 // انیمیشن های مختلف
 const animations = {

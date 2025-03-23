@@ -19,14 +19,13 @@ import requestGroupRoutes from './routes/requestGroup.routes';
 import requestSubGroupRoutes from './routes/requestSubGroup.routes';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import fs from 'fs';
-import userService from './services/userService';
 
 // ایجاد اپلیکیشن Express
 const app: Express = express();
 
 // تنظیمات CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', config.clientUrl],
+  origin: ['http://localhost:5173', 'http://localhost:3000', config.server.clientUrl],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'X-Custom-Auth', 'X-Requested-With']

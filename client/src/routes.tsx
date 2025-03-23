@@ -11,7 +11,7 @@ import PaymentImagesPage from './pages/PaymentImagesPage';
 import GroupsPage from './pages/GroupsPage';
 import ContactsPage from './pages/ContactsPage';
 import UsersPage from './pages/UsersPage';
-import SmsSettingsPage from './pages/SmsSettingsPage';
+import SmsPage from './pages/Sms';
 import RequestTypesPage from './pages/RequestTypesPage';
 import RequestGroupsPage from './pages/RequestGroupsPage';
 import RequestSubGroupsPage from './pages/RequestSubGroupsPage';
@@ -55,7 +55,7 @@ const AppRoutes: React.FC = () => {
         
         {/* مسیرهای مدیریتی - فقط برای ادمین */}
         <Route path="users" element={isAdmin ? <UsersPage /> : <Navigate to="/dashboard" />} />
-        <Route path="settings/sms" element={isAdmin ? <SmsSettingsPage /> : <Navigate to="/dashboard" />} />
+        <Route path="settings/sms" element={isAdmin ? <SmsPage /> : <Navigate to="/dashboard" />} />
       </Route>
       
       {/* مسیر 404 */}

@@ -35,10 +35,10 @@ model User {
   assignedRequests     Request[]           @relation("RequestAssignedTo")
   createdRequests      Request[]           @relation("RequestCreatedBy")
   createdContactGroups ContactGroup[]      @relation("ContactGroupCreatedBy")
-  contactGroupMemberships ContactGroupMember[] @relation("ContactGroupMemberUser")
-  createdSmsTemplates  SmsTemplate[]       @relation("SmsTemplateCreatedBy")
+  contactGroupMembers  ContactGroupMember[] @relation("ContactGroupMemberUser")
+  smsTemplates         SmsTemplate[]       @relation("SmsTemplateCreatedBy")
   smsLogs              SmsLog[]            @relation("SmsLogUser")
-  createdSmsSchedules  SmsSchedule[]       @relation("SmsScheduleCreatedBy")
+  smsSchedules         SmsSchedule[]       @relation("SmsScheduleCreatedBy")
 }
 
 model PaymentGroup {
@@ -90,7 +90,7 @@ model Contact {
   activities      ContactPortalActivity[]
   paymentRequests PaymentRequest[]
   requests        Request[]               @relation("ContactRequests")
-  contactGroupMemberships ContactGroupMember[] @relation("ContactGroupMemberContact")
+  groupMembers    ContactGroupMember[]    @relation("ContactGroupMemberContact")
 }
 
 model PaymentRequest {
@@ -312,20 +312,25 @@ model ContactGroup {
 }
 
 model ContactGroupMember {
-  id        Int          @id @default(autoincrement())
-  groupId   Int
-  contactId Int?
-  createdAt DateTime     @default(now())
-  group     ContactGroup @relation(fields: [groupId], references: [id])
-  user      User?        @relation("ContactGroupMemberUser", fields: [contactId], references: [id], map: "ContactGroupMember_userId_fkey")
-  contact   Contact?     @relation("ContactGroupMemberContact", fields: [contactId], references: [id], map: "ContactGroupMember_contactId_fkey")
+  id          Int          @id @default(autoincrement())
+  groupId     Int
+  contactType String       // USER, CONTACT, EXTERNAL
+  contactId   Int?         // برای USER و CONTACT
+  name        String?      // برای EXTERNAL
+  phone       String
+  group       ContactGroup @relation(fields: [groupId], references: [id])
+  user        User?        @relation("ContactGroupMemberUser", fields: [contactId], references: [id], map: "ContactGroupMember_userId_fkey")
+  contact     Contact?     @relation("ContactGroupMemberContact", fields: [contactId], references: [id], map: "ContactGroupMember_contactId_fkey")
 }
 
 model SmsTemplate {
   id          Int       @id @default(autoincrement())
-  name        String
-  content     String
-  variables   String[]
+  title       String    // عنوان قالب
+  content     String    // متن قالب
+  variables   String[]  // متغیرهای قابل جایگزینی در قالب
+  description String?   // توضیحات
+  category    String    // دسته‌بندی (مثلاً پرداخت، اطلاع‌رسانی و...)
+  isActive    Boolean   @default(true)
   createdBy   Int
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -334,29 +339,62 @@ model SmsTemplate {
 
 model SmsLog {
   id            Int       @id @default(autoincrement())
-  mobile        String
-  message       String
-  status        String    // موفق، ناموفق، در صف و ...
-  messageId     String?   // شناسه پیام در سیستم پیامکی
-  deliveryStatus String?  // وضعیت تحویل پیام
-  cost          Int?      // هزینه ارسال پیامک
+  receiver      String    // شماره گیرنده
+  message       String    // متن پیامک
+  messageId     String?   // شناسه پیامک در سرویس دهنده
+  status        SmsStatus @default(SENT)
+  statusDetails String?   // جزئیات وضعیت
+  provider      String    // سرویس دهنده پیامک
+  senderNumber  String    // شماره فرستنده
   sentAt        DateTime  @default(now())
-  provider      String?   // سرویس‌دهنده پیامکی
+  updatedAt     DateTime  @updatedAt
+  relatedTo     String?   // نوع موضوع مرتبط (مثل Payment, Request و...)
+  relatedId     Int?      // شناسه موضوع مرتبط
+  cost          Float?    // هزینه ارسال
   userId        Int?      // کاربر ارسال کننده (اگر دستی ارسال شده)
   user          User?     @relation("SmsLogUser", fields: [userId], references: [id])
 }
 
+enum SmsStatus {
+  SENT          // ارسال شده
+  DELIVERED     // تحویل داده شده
+  FAILED        // ناموفق
+  PENDING       // در صف ارسال
+  EXPIRED       // منقضی شده
+  BLOCKED       // مسدود شده
+  UNDELIVERED   // تحویل داده نشده
+}
+
 model SmsSchedule {
   id           Int                  @id @default(autoincrement())
-  title        String
-  message      String
+  title        String               // عنوان برنامه
+  message      String               // متن پیامک
+  recipients   String[]             // شماره‌های گیرندگان
   scheduleTime DateTime             // زمان ارسال
   isRecurring  Boolean              @default(false)
-  recurrencePattern String?         // الگوی تکرار (روزانه، هفتگی، ماهانه و...)
-  status       String               // وضعیت (در انتظار، ارسال شده، لغو شده...)
-  recipients   String[]             // گیرندگان (می‌تواند شماره موبایل یا شناسه گروه باشد) 
+  recurrence   SmsScheduleRecurrence?
+  status       SmsScheduleStatus    @default(PENDING)
   createdBy    Int
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   creator      User                 @relation("SmsScheduleCreatedBy", fields: [createdBy], references: [id])
+}
+
+model SmsScheduleRecurrence {
+  id           Int          @id @default(autoincrement())
+  scheduleId   Int          @unique
+  schedule     SmsSchedule  @relation(fields: [scheduleId], references: [id])
+  frequency    String       // روزانه، هفتگی، ماهانه
+  interval     Int          @default(1)
+  daysOfWeek   Int[]        // روزهای هفته (۰-۶)
+  daysOfMonth  Int[]        // روزهای ماه (۱-۳۱)
+  startDate    DateTime
+  endDate      DateTime?
+}
+
+enum SmsScheduleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  RUNNING
 }

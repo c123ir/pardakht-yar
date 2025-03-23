@@ -1,7 +1,7 @@
 // client/src/components/avatar/AvatarUploader.tsx
 // کامپوننت آپلودر آواتار حرفه‌ای با قابلیت کراپ تصویر
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -11,7 +11,6 @@ import {
   DialogTitle,
   Typography,
   Slider,
-  Avatar,
   IconButton,
   CircularProgress,
   LinearProgress,
@@ -20,13 +19,11 @@ import {
 } from '@mui/material';
 import Cropper from 'react-easy-crop';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import CropRotateIcon from '@mui/icons-material/CropRotate';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useImages } from '../../contexts/ImageContext';
 import FallbackAvatar from '../common/FallbackAvatar';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import UserAvatar from '../common/UserAvatar';
 import { useAuth } from '../../hooks/useAuth';
 
 // تعریف مستقیم تایپ‌ها به جای import از ماژول react-easy-crop/types
@@ -123,6 +120,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   user,
 }) => {
   const { isUploading, uploadProgress, uploadAvatar, getImageUrl } = useImages();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -131,7 +129,6 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   const [openCropDialog, setOpenCropDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [imageError, setImageError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatar || null);
   const [hasImageError, setHasImageError] = useState(false);
@@ -139,7 +136,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   const { user: authUser, updateUserDetails } = useAuth();
   
   // انتخاب تصویر
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onSelectFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       
@@ -150,24 +147,20 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       }
       
       // بررسی نوع فایل
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.includes('image')) {
         setError('فقط فایل‌های تصویری مجاز هستند');
         return;
       }
       
       const reader = new FileReader();
       reader.addEventListener('load', () => {
-        if (typeof reader.result === 'string') {
-          setImageSrc(reader.result);
-          setOpenCropDialog(true);
-        }
+        const dataUrl = reader.result?.toString() || '';
+        setPreviewUrl(dataUrl);
+        setOpenCropDialog(true);
       });
       reader.readAsDataURL(file);
     }
-    
-    // پاک کردن مقدار input برای امکان انتخاب مجدد همان فایل
-    e.target.value = '';
-  };
+  }, []);
   
   // تغییر محل کراپ
   const onCropChange = useCallback((newCrop: Point) => {
@@ -198,7 +191,6 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
     setImageSrc(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
-    setRotation(0);
   };
   
   // ذخیره تصویر کراپ شده
@@ -227,7 +219,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       console.log('آپلود موفق آمیز آواتار:', result);
       
       // اگر کاربر فعلی در حال ویرایش آواتار خودش است، هدر را هم به‌روزرسانی کنیم
-      if (authUser && userId && authUser.id.toString() === userId.toString()) {
+      if (authUser && userId && authUser.id && authUser.id.toString() === userId) {
         updateUserDetails({
           ...authUser,
           avatar: result.path,
@@ -254,7 +246,6 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   // تابع رفرش تصویر
   const handleRefreshImage = () => {
     setRefreshKey(prev => prev + 1);
-    setImageError(false);
   };
 
   // مدیریت خطای بارگذاری تصویر
@@ -273,22 +264,6 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
     };
     img.src = '/avatar.jpg';
   };
-  
-  // تبدیل مسیر نسبی به URL کامل با استفاده از کانتکست
-  const avatarUrl = currentAvatar 
-    ? getImageUrl(currentAvatar)
-    : '';
-  
-  useEffect(() => {
-    // هر وقت currentAvatar تغییر کند، refreshKey را افزایش دهید
-    if (currentAvatar) {
-      setRefreshKey(prev => prev + 1);
-      setImageError(false);
-      setPreviewUrl(getImageUrl(currentAvatar));
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [currentAvatar, getImageUrl]);
   
   // پیش‌نمایش آواتار
   const renderPreview = () => {
@@ -361,6 +336,16 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
     );
   };
   
+  useEffect(() => {
+    // هر وقت currentAvatar تغییر کند، refreshKey را افزایش دهید
+    if (currentAvatar) {
+      setRefreshKey(prev => prev + 1);
+      setPreviewUrl(getImageUrl(currentAvatar));
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [currentAvatar, getImageUrl]);
+  
   return (
     <Box sx={{ textAlign: 'center', position: 'relative' }}>
       {/* نمایش آواتار و دکمه آپلود */}
@@ -395,7 +380,8 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
             type="file"
             id="avatar-upload"
             accept="image/*"
-            onChange={handleFileChange}
+            onChange={onSelectFile}
+            ref={fileInputRef}
             style={{ display: 'none' }}
           />
           <IconButton
@@ -448,12 +434,12 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              rotation={rotation}
               aspect={1}
               cropShape="round"
               onCropChange={onCropChange}
               onCropComplete={onCropComplete}
               onZoomChange={onZoomChange}
+              onRotationChange={onRotationChange}
             />
           )}
         </DialogContent>
@@ -466,17 +452,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
             max={3}
             step={0.1}
             aria-labelledby="zoom"
-            onChange={(e, value) => setZoom(value as number)}
-          />
-          
-          <Typography variant="body2" sx={{ mb: 1, mt: 2 }}>چرخش</Typography>
-          <Slider
-            value={rotation}
-            min={0}
-            max={360}
-            step={1}
-            aria-labelledby="rotation"
-            onChange={(e, value) => setRotation(value as number)}
+            onChange={(_e, value) => setZoom(value as number)}
           />
         </Box>
         

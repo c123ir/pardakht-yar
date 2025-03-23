@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Avatar, SxProps, Theme, Box, Skeleton, Tooltip, CircularProgress } from '@mui/material';
+import { Avatar, SxProps, Theme, Box, CircularProgress } from '@mui/material';
 import { useImages } from '../../contexts/ImageContext';
 import FallbackAvatar from './FallbackAvatar';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
 
 interface UserAvatarProps {
   avatar?: string | null;

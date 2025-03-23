@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Card,
-  CardContent,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -30,16 +29,10 @@ import {
   Switch,
   Grid,
   InputAdornment,
-  ListItemIcon,
-  ListItemText,
   Chip,
-  Divider,
-  Fade,
-  Zoom,
   Tooltip,
-  useTheme,
-  alpha,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -56,10 +49,9 @@ import {
   Add as AddIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Circle as CircleIcon,
-  CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../contexts/NotificationContext';
@@ -68,7 +60,6 @@ import userService from '../services/userService';
 import { convertPersianToEnglishNumbers } from '../utils/numbers';
 import UserAvatar from '../components/common/UserAvatar';
 import AvatarUploader from '../components/avatar/AvatarUploader';
-import CSSAnimation from '../components/common/CSSAnimation';
 
 interface DialogState {
   isOpen: boolean;
@@ -86,7 +77,6 @@ const initialUserInput: CreateUserInput = {
 };
 
 const UsersPage: React.FC = () => {
-  const theme = useTheme();
   const { user: currentUser, updateUserDetails } = useAuth();
   const { showNotification } = useNotification();
   const [users, setUsers] = useState<User[]>([]);
@@ -620,14 +610,14 @@ const UsersPage: React.FC = () => {
           <DialogContent sx={{ p: 3, pt: 2 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
-                <TextField
+            <TextField
                   name="username"
                   label="نام کاربری"
-                  fullWidth
+              fullWidth
                   size="small"
-                  value={userInput.username}
-                  onChange={handleTextFieldChange}
-                  disabled={dialogState.mode === 'edit'}
+              value={userInput.username}
+              onChange={handleTextFieldChange}
+              disabled={dialogState.mode === 'edit'}
                   required
                   InputProps={{
                     startAdornment: (
@@ -657,13 +647,13 @@ const UsersPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <TextField
+            <TextField
                   name="password"
                   label={dialogState.mode === 'create' ? 'رمز عبور' : 'رمز عبور جدید (اختیاری)'}
-                  fullWidth
+              fullWidth
                   size="small"
-                  value={userInput.password}
-                  onChange={handleTextFieldChange}
+              value={userInput.password}
+              onChange={handleTextFieldChange}
                   required={dialogState.mode === 'create'}
                   type={showPassword ? 'text' : 'password'}
                   InputProps={{
@@ -705,13 +695,13 @@ const UsersPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
+            <TextField
                   name="fullName"
                   label="نام و نام خانوادگی"
-                  fullWidth
+              fullWidth
                   size="small"
-                  value={userInput.fullName}
-                  onChange={handleTextFieldChange}
+              value={userInput.fullName}
+              onChange={handleTextFieldChange}
                   required
                   InputProps={{
                     startAdornment: (
@@ -741,13 +731,13 @@ const UsersPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <TextField
+            <TextField
                   name="email"
                   label="ایمیل"
-                  fullWidth
+              fullWidth
                   size="small"
-                  value={userInput.email}
-                  onChange={handleTextFieldChange}
+              value={userInput.email}
+              onChange={handleTextFieldChange}
                   type="email"
                   InputProps={{
                     startAdornment: (
@@ -776,13 +766,13 @@ const UsersPage: React.FC = () => {
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
+            <TextField
                   name="phone"
                   label="شماره تماس"
-                  fullWidth
+              fullWidth
                   size="small"
-                  value={userInput.phone}
-                  onChange={handleTextFieldChange}
+              value={userInput.phone}
+              onChange={handleTextFieldChange}
                   dir="ltr"
                   InputProps={{
                     startAdornment: (

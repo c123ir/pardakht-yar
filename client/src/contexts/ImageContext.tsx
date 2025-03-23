@@ -31,21 +31,6 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   
-  // تنظیمات از متغیرهای محیطی
-  const useUiAvatars = import.meta.env.VITE_USE_UI_AVATARS === 'true';
-  const uiAvatarsUrl = import.meta.env.VITE_UI_AVATARS_URL || 'https://ui-avatars.com/api';
-  
-  // تابع دریافت آواتار از سرویس UI Avatars
-  const getUiAvatarUrl = useCallback((name: string, size: number = 100): string => {
-    const params = new URLSearchParams({
-      name,
-      size: String(size),
-      background: 'random',
-      color: 'ffffff',
-    });
-    return `${uiAvatarsUrl}?${params.toString()}`;
-  }, [uiAvatarsUrl]);
-  
   // آپلود آواتار پروفایل
   const uploadAvatar = async (file: File, userId?: string): Promise<{ path: string }> => {
     setIsUploading(true);
@@ -107,7 +92,7 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
     
     // بررسی می‌کنیم آیا مسیر یک URL کامل است
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      // حتی برای URL های کامل، یک پارامتر زمان اضافه می‌کنیم تا کش نشوند
+      // حتی برای URL های کامل، یک تایم استمپ اضافه می‌کنیم تا کش نشوند
       const separator = path.includes('?') ? '&' : '?';
       return `${path}${separator}t=${Date.now()}&nocache=true`;
     }

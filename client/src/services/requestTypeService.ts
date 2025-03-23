@@ -8,7 +8,7 @@ const API_URL = '/request-types';
 
 const requestTypeService = {
   // دریافت همه انواع درخواست
-  getAllRequestTypes: async (activeOnly: boolean = false): Promise<ApiResponse<any[]>> => {
+  getAllRequestTypes: async (activeOnly = false): Promise<ApiResponse<any[]>> => {
     try {
       let url = `${API_URL}`;
       if (activeOnly) {
@@ -23,7 +23,7 @@ const requestTypeService = {
   },
 
   // دریافت انواع درخواست با صفحه‌بندی
-  getRequestTypes: async (page: number = 1, limit: number = 10, search: string = ''): Promise<PaginatedResponse<any[]>> => {
+  getRequestTypes: async (page = 1, limit = 10, search = ''): Promise<PaginatedResponse<any[]>> => {
     try {
       let url = `${API_URL}?page=${page}&limit=${limit}`;
       if (search) {

@@ -14,9 +14,7 @@ import {
   ListItemIcon,
   ListItemText,
   useMediaQuery,
-  Button,
   Typography,
-  Avatar,
   Chip,
 } from '@mui/material';
 import {

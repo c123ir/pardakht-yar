@@ -11,7 +11,7 @@ import { convertEnglishToPersianNumbers } from './stringUtils';
  * @param formatStr الگوی نمایش تاریخ
  * @returns رشته تاریخ شمسی
  */
-export const toJalali = (date: Date | string | number, formatStr: string = 'yyyy/MM/dd'): string => {
+export const toJalali = (date: Date | string | number, formatStr = 'yyyy/MM/dd'): string => {
   if (!date) return '';
   
   const dateObj = typeof date === 'string' || typeof date === 'number' 
@@ -27,7 +27,7 @@ export const toJalali = (date: Date | string | number, formatStr: string = 'yyyy
  * @param formatStr الگوی تاریخ ورودی
  * @returns آبجکت تاریخ میلادی
  */
-export const toGregorian = (jalaliDate: string, formatStr: string = 'yyyy/MM/dd'): Date => {
+export const toGregorian = (jalaliDate: string, formatStr = 'yyyy/MM/dd'): Date => {
   return parse(jalaliDate, formatStr, new Date());
 };
 

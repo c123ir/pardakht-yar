@@ -1,6 +1,4 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-import { Theme } from '@mui/material/styles';
-import { alpha } from '@mui/material/styles';
 
 declare module '@mui/material/styles' {
   interface BreakpointOverrides {
@@ -42,72 +40,12 @@ declare module '@mui/material/styles' {
 
 // تنظیمات مشترک بین تم روشن و تاریک
 const commonSettings = {
-  direction: 'rtl',
+  direction: 'rtl' as const,
   typography: {
     fontFamily: 'IRANSans, Vazirmatn, Tahoma, Arial, sans-serif',
   },
   shape: {
     borderRadius: 8,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: 'none',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-          },
-        },
-      },
-    },
-    MuiIconButton: {
-      styleOverrides: {
-        root: {
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'scale(1.1)',
-            backgroundColor: 'rgba(33, 150, 243, 0.1)',
-          },
-        },
-      },
-    },
-    MuiListItem: {
-      styleOverrides: {
-        root: {
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            backgroundColor: 'rgba(33, 150, 243, 0.05)',
-            transform: 'translateX(-4px)',
-          },
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            backgroundColor: 'rgba(33, 150, 243, 0.05)',
-            transform: 'scale(1.01)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          },
-        },
-      },
-    },
   },
   customShadows: {
     button: '0 4px 10px rgba(0, 0, 0, 0.15)',
